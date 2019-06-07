@@ -1,0 +1,665 @@
+<html lang="en">
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- Loading Bootstrap -->
+    <link href="css/vendor/bootstrap.min.css" rel="stylesheet">
+    <!-- Loading Flat UI Pro -->
+    <link href="css/flat-ui.css" rel="stylesheet">
+    <style>
+        body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #F8F8F8;
+        }
+
+        .noborder {
+            border: none;
+            box-shadow: none;
+        }
+
+        .head {
+            padding: 0 32px;
+            border-radius: 0;
+            margin-bottom: 0;
+        }
+
+        .flex {
+            display: flex;
+            align-items: center;
+        }
+
+        h6 {
+            margin: auto 32px auto 0;
+        }
+
+        .sub-head {
+            width: 100%;
+            background-color: rgba(52, 73, 94, 0.95);
+            padding-bottom: 36px;
+        }
+
+        .description {
+            color: whitesmoke;
+            font-size: 16px;
+            padding: 24px 36px;
+            line-height: 28px;
+        }
+
+        .float-bar {
+            height: 72px;
+            width: calc(100% - 72px);
+            margin: -36px 36px 16px 36px;
+            -webkit-border-radius: 6px;
+            -moz-border-radius: 6px;
+            border-radius: 6px;
+            background-color: white;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+            padding: 0 36px;
+        }
+
+        .quicktask {
+            margin: auto 16px auto 0;
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            padding: 4px 12px;
+            font-size: 14px;
+            color: #333333;
+            min-width: 72px;
+            text-align: center;
+        }
+
+        .card {
+            width: calc(100% - 72px);
+            margin: 0 36px 16px 36px;
+            -webkit-border-radius: 6px;
+            -moz-border-radius: 6px;
+            border-radius: 6px;
+            border: none;
+            background-color: white;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.12);
+            padding: 0 36px;
+        }
+
+        .duration {
+            margin-right: 32px;
+            font-weight: bold;
+            color: #1b1e21;
+        }
+
+        .bottom-line {
+            background: #00c6ff; /* fallback for old browsers */
+            background: -webkit-linear-gradient(to right, #0072ff, #00c6ff); /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to right, #0072ff, #00c6ff); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            height: 6px;
+            border-radius: 2px;
+            margin-top: -4px;
+        }
+
+        .transparent {
+            background: transparent;
+        }
+
+        .hr {
+            width: 100%;
+            height: 1px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .segment, .dimension {
+            margin-top: 12px;
+            margin-bottom: 12px;
+            min-width: 100px;
+            text-align: center;
+            color: #1b1e21;
+            background-color: #EEEEEE;
+        }
+
+        .active {
+            color: white;
+            background-color: rgba(52, 73, 94, 0.95);
+        }
+
+        tr {
+            height: 48px;
+            /*background-color: lightgray;*/
+        }
+
+        tr th:first-child, tr td:nth-child(1) {
+            width: 8%;
+            padding: 0 48px 0 24px;
+            text-align: right;
+        }
+
+        tr th:nth-child(n+2):nth-child(-n+4), tr td:nth-child(n+2):nth-child(-n+4) {
+            width: 16%;
+            padding: 0 48px 0 24px;
+            text-align: left;
+        }
+
+        tr th:nth-child(n+5), tr td:nth-child(n+5) {
+            width: 15%;
+            padding: 0 48px 0 24px;
+            text-align: right;
+        }
+
+        /*设置奇数行颜色*/
+        table tr:nth-child(odd) {
+            background: #EEEEEE;
+        }
+
+        /*设置偶数行颜色*/
+        table tr:nth-child(even) {
+            background: #F8F8F8;
+        }
+
+        .footer {
+            margin-right: 24px;
+            font-size: 16px;
+        }
+
+        .navbar-brand, .navbar-brand:hover, .navbar-brand:active, .navbar-brand:visited, .navbar-brand:link,
+        .navbar-brand:focus {
+            color: whitesmoke;
+        }
+
+        a.duration, a.duration:hover, a.duration:active, a.duration:visited, a.duration:link, a.duration:focus {
+            color: #1b1e21;
+        }
+
+        table {
+            margin-top: 0;
+            width: 100%;
+        }
+
+        tr {
+            width: 100%;
+        }
+
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdn.bootcss.com/echarts/4.2.1/echarts.js"></script>
+    <script type="text/javascript" src="china.js"></script>
+    <script type="text/javascript" src="macarons.js"></script>
+    <script type="text/javascript" src="walden.js"></script>
+    <script>
+        let chartsArr = [];
+        let type = 1;
+        let page = 1;
+        let level = 1;
+        let maxPage = 1;
+        let totalCount = 0;
+
+        let headKeys = [[],
+            ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
+            ['序号', '名称', '比重/%', '满仓比重/%'],
+            ['序号', '名称', '代码', '调仓比重/%'],
+            ['序号', '名称', '代码', '主理人', '净值', '在榜天数']];
+        let paramKeys = [[],
+            ['rank', 'stockName', 'stockSymbol', 'segmentName', 'count', 'percentWithCash', 'percent'],
+            ['rank', 'segmentName', 'percentWithCash', 'percent'],
+            ['rank', 'stockName', 'stockSymbol', 'percent'],
+            ['rank', 'name', 'symbol', 'screenName', 'netValue', 'showDaysCount']];
+        let selectors = ['a.segment', 'a.dimension'];
+
+        $(function () {
+            selectors.forEach(function (value) {
+                $(value).mouseenter(function () {
+                    if ($(this).hasClass('active')) {
+                        $(this).css('color', 'white');
+                    } else {
+                        $(this).css('color', '#1b1e21');
+                    }
+                }).mouseleave(function () {
+                    if ($(this).hasClass('active')) {
+                        $(this).css('color', 'white');
+                    } else {
+                        $(this).css('color', '#1b1e21');
+                    }
+                }).click(function () {
+                    $(value).css('color', '#1b1e21');
+                    $(this).css('color', 'white');
+                }).focusout(function () {
+                    if ($(this).hasClass('active')) {
+                        $(this).css('color', 'white');
+                    } else {
+                        $(this).css('color', '#1b1e21');
+                    }
+                });
+            });
+
+
+            let catIds = ['#stock', '#segment', '#rebalancing', '#showDays'];
+            catIds.forEach(function (value) {
+                $(value).on('click', function () {
+                    switch (value) {
+                        case '#stock':
+                            type = 1;
+                            break;
+                        case '#segment':
+                            type = 2;
+                            break;
+                        case '#rebalancing':
+                            type = 3;
+                            break;
+                        case '#showDays':
+                            type = 4;
+                            break;
+                    }
+                    page = 1;
+                    fillChartData(type, level, page);
+                });
+            });
+            let durationIds = ['#quarter', '#half-year', '#year'];
+            durationIds.forEach(function (value) {
+                $(value).on('click', function () {
+                    switch (value) {
+                        case '#quarter':
+                            level = 1;
+                            break;
+                        case '#half-year':
+                            level = 2;
+                            break;
+                        case '#year':
+                            level = 3;
+                            break;
+                    }
+                    $("#level-duration>a>.bottom-line").addClass("transparent");
+                    $("#level-duration>a>.bottom-line:eq(" + (level - 1) + ")").removeClass("transparent");
+                    page = 1;
+                    fillChartData(type, level, page);
+                });
+            });
+            $('#last-page').on('click', function () {
+                if (page === 1) {
+                    alert("已是第一页");
+                    return;
+                }
+                page--;
+                fillChartData(type, level, page);
+            });
+            $('#next-page').on('click', function () {
+                if (page === maxPage) {
+                    alert("已是最后一页");
+                    return;
+                }
+                page++;
+                fillChartData(type, level, page);
+            });
+
+            fillChartData(type, level, page);
+        });
+
+        /**
+         * 填充表格数据
+         * @param type
+         * @param level
+         * @param page
+         */
+        function fillChartData(type, level, page) {
+            if (chartsArr[type] == null) {
+                chartsArr[type] = [];
+                fetchChartData(type, level);
+                return;
+            }
+            if (chartsArr[type][level] == null) {
+                fetchChartData(type, level);
+                return;
+            }
+            this.type = type;
+            this.level = level;
+            this.page = page;
+
+            let list = chartsArr[type][level].data.list;
+            let html = "<table><tr>";
+
+            headKeys[type].forEach(function (value) {
+                html += '<th>' + value + '</th>';
+            });
+            html += '</tr>';
+
+            for (let i = 15 * (page - 1), count = 0; count < 15; i++, count++) {
+                html += '<tr>';
+                let item = list[i];
+                if (item == null) {
+                    headKeys[type].forEach(function () {
+                        html += "<td></td>";
+                    });
+                    html += '</tr>';
+                    continue;
+                }
+
+
+                paramKeys[type].forEach(function (value) {
+                    if (value === 'percent'
+                        || value === 'percentWithCash'
+                        || value === 'netValue') {
+                        html += '<td>' + item[value].toFixed(type === 3 ? 6 : 4) + '</td>';
+                    } else {
+                        html += '<td>' + item[value] + '</td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += "</table>";
+            document.getElementById('chart').innerHTML = html;
+            totalCount = chartsArr[type][level].data['count'];
+            maxPage = totalCount % 15 === 0 ? totalCount / 15 : Math.ceil(totalCount / 15);
+            document.getElementById('page').innerHTML = page + "/" + maxPage;
+            document.getElementById('size').innerHTML = "共" + totalCount + "条数据";
+            let cash = chartsArr[type][level].data['cash'];
+            document.getElementById('cash').innerHTML = cash == null ? '' : ("现金仓位:" + cash + "%");
+            let updatedAt = chartsArr[type][level].data['updatedAt'];
+            document.getElementById('update-time').innerHTML = "更新于" + updatedAt;
+        }
+
+        /**
+         * 请求接口数据
+         * @param type
+         * @param level
+         */
+        function fetchChartData(type, level) {
+            let ajax = new XMLHttpRequest();
+            ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&level=' + level);
+            ajax.send();
+            ajax.onreadystatechange = function () {
+                if (ajax.readyState === 4 && ajax.status === 200) {
+                    let chart = ajax.responseText;
+                    chart = JSON.parse(chart);
+                    chartsArr[type][level] = chart;
+                    fillChartData(type, level, 1);
+                }
+            }
+        }
+
+    </script>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-embossed navbar-expand-lg head" role="navigation">
+    <div class="navbar-brand">更多数据</div>
+    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse-01"></button>
+    <div class="collapse navbar-collapse" id="navbar-collapse-01" style="border: none;box-shadow: none;">
+        <ul class="nav navbar-nav mr-auto">
+            <li><a href="#fakelink">数据</a></li>
+            <li><a href="#fakelink">图表</a></li>
+            <li><a href="#fakelink">关于</a></li>
+        </ul>
+        <form class="navbar-form form-inline my-2 my-lg-0" action="#" role="search">
+            <div class="form-group">
+                <div class="input-group">
+                    <input class="form-control" id="navbarInput-01" type="search" placeholder="Search">
+                    <span class="input-group-btn">
+                      <button type="submit" class="btn"><span class="fui-search"></span></button>
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div><!-- /.navbar-collapse -->
+</nav><!-- /navbar -->
+<div class="sub-head flex">
+    <span class="description" style="margin-left: 36px;">
+        每日风云榜跟踪，及时追踪雪球组合风云榜三大榜单TOP100<br/>
+        筛选持仓比重、组合持仓、板块比重等数据，生成相应组合<br/>
+        股市有风险，入市需谨慎</span>
+
+    <div style="flex:1;"></div>
+    <div class="description flex" style="padding-bottom:12px;margin-top: 36px;margin-right: 36px;">
+        页面数据来自<img src="xueqiu-logotype-透明底白字.png" style="width: 100px;height: 40px;">仅供参考
+    </div>
+</div>
+<div class="float-bar flex">
+    <h6 style="margin-right: 24px;">快速通道</h6>
+    <div class="quicktask">个股</div>
+    <div class="quicktask">板块</div>
+    <div class="quicktask">调仓</div>
+    <div class="quicktask" style="border: none;">添加</div>
+</div>
+<div class="card">
+    <div class="flex" style="height: 48px;" id="level-duration">
+        <a id="quarter" class="duration" href="javascript:void(0);">近三个月
+            <div class="bottom-line"></div>
+        </a>
+        <a id="half-year" class="duration" href="javascript:void(0);">近六个月
+            <div class="bottom-line transparent"></div>
+        </a>
+        <a id="year" class="duration" href="javascript:void(0);">近一年
+            <div class="bottom-line transparent"></div>
+        </a>
+    </div>
+    <div class="hr"></div>
+    <!--<div class="btn-toolbar">-->
+    <div class="flex">
+        <div class="btn-group">
+            <a id="stock" class="segment btn  active" href="#fakelink">个股</span></a>
+            <a id="segment" class="segment btn " href="#fakelink">板块</a>
+            <a id="rebalancing" class="segment btn" href="#fakelink">调仓</a>
+            <a id="showDays" class="segment btn" href="#fakelink">在榜天数</a>
+        </div>
+        <b id="cash" style="margin-left: 24px;"></b>
+        <div id="update-time" style="flex: 1;text-align: right;"></div>
+
+    </div>
+
+    <!--</div> &lt;!&ndash; /toolbar &ndash;&gt;-->
+    <div id="chart" style="width: 100%;"></div>
+    <!--<div class="hr"></div>-->
+    <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
+        <div class="footer" id="size">共0条数据</div>
+        <a id="next-page" class="footer" href="javascript:void(0);">下一页</a>
+        <div class="footer" id="page">1/1</div>
+        <a id='last-page' class="footer" href="javascript:void(0);">上一页</a>
+
+    </div>
+
+</div>
+
+<div class="card">
+    <div class="flex" style="height: 48px;">
+        <div class="duration" href="javascript:void(0);">雪球网用户数据
+            <div class="bottom-line"></div>
+        </div>
+        <span style="flex:1;text-align:right;font-size: 14px;">
+            数据中存在一些不规范和非法数据，可能是雪球网升级过程中的历史遗留，因此剔除了该类数据。分析基于五月份平台数据
+        </span>
+    </div>
+    <div class="hr"></div>
+    <!--<div class="btn-toolbar">-->
+    <div class="flex" hidden>
+        <div class="btn-group">
+            <a id="name" class="dimension btn  active" href="#fakelink">性别</span></a>
+            <a id="area" class="dimension btn " href="#fakelink">地区</a>
+            <a id="activation" class="dimension btn" href="#fakelink">活跃度</a>
+            <a id="fans" class="dimension btn" href="#fakelink">粉丝值</a>
+        </div>
+    </div>
+    <div class="flex" style="margin-top: 12px;">
+        <div id="gender-chart" style="flex: 1;height:300px;"></div>
+        <div id="activation-chart" style="flex: 1;height:300px;"></div>
+        <div id="fans-chart" style="flex: 1;height:300px;"></div>
+    </div>
+    <div id="area-chart" style="width: 100%;height:800px;"></div>
+    <!--<div style="height:600px;">-->
+    </div>
+
+</div>
+<script>
+    let genderChart = echarts.init(document.getElementById('gender-chart'),'walden');
+    genderChart.setOption({
+        title: {
+            text: '用户性别分布',
+            x:'center',
+            top: 20
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: "{a} <br/>{b}: {c} ({d}%)"
+        },
+        legend: {
+            top: '30%',
+            orient: 'vertical',
+            x: 'left',
+            data: ['男性', '女性', '保密']
+        },
+        series: [
+            {
+                name: '性别分布',
+                type: 'pie',
+                radius: '60%',
+                center: ['50%','60%'],
+                startAngle: 180,
+                hoverAnimation: false,
+                selectedMode: false,
+                data: [
+                    {value: 415452, name: '男性'},
+                    {value: 87066, name: '女性'},
+                    {value: 6756543, name: '保密'}
+                ]
+            }
+        ]
+    });
+
+    let fansChart = echarts.init(document.getElementById('fans-chart'),'walden');
+    fansChart.setOption({
+        title: {
+            text: '粉丝值区间分布',
+            x:'center',
+            top: 20
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: "{a} <br/>{b}: {c} ({d}%)"
+        },
+        legend: {
+            top: '30%',
+            orient: 'vertical',
+            x: 'right',
+            data: ['无人关注', '1~10', '11~100','101~1000', '1001~10000','10001~10万', '>10万']
+        },
+        series: [
+            {
+                name: '粉丝值区间分布',
+                type: 'pie',
+                radius: '60%',
+                center: ['50%','60%'],
+                startAngle: 180,
+                hoverAnimation: false,
+                selectedMode: false,
+                data: [
+                    {value: 5911534, name: '无人关注'},
+                    {value: 1164854, name: '1~10'},
+                    {value: 128151, name: '11~100'},
+                    {value: 38269, name: '101~1000'},
+                    {value: 11122, name: '1001~10000'},
+                    {value: 5009, name: '10001~10万'},
+                    {value: 122, name: '>10万'},
+                ]
+            }
+        ]
+    });
+
+    let activationChart = echarts.init(document.getElementById('activation-chart'),'walden');
+    activationChart.setOption({
+        title: {
+            text: '活跃度区间分布(发言数)',
+            x:'center',
+            top: 20
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: "{a} <br/>{b}: {c} ({d}%)"
+        },
+        legend: {
+            top: '60px',
+            x: 'center',
+            data: ['无发言', '1~10', '11~100','101~1000','>1000']
+        },
+        series: [
+            {
+                name: '活跃度区间分布(发言数)',
+                type: 'pie',
+                radius: '60%',
+                center: ['50%','60%'],
+                startAngle: 180,
+                hoverAnimation: false,
+                selectedMode: false,
+                data: [
+                    {value: 4958086, name: '无发言'},
+                    {value: 1630273, name: '1~10'},
+                    {value: 547036, name: '11~100'},
+                    {value: 114830, name: '101~1000'},
+                    {value: 8836, name: '>1000'},
+                ]
+            }
+        ]
+    })
+
+    let areaChart = echarts.init(document.getElementById('area-chart'),'walden');
+    var mydata = [
+        {name: '北京',value: 159469 },{name: '天津',value: 10784 },
+        {name: '上海',value: 117347 },{name: '重庆',value: 15623 },
+        {name: '河北',value: 14277 },{name: '河南',value: 21499 },
+        {name: '云南',value: 6535 },{name: '辽宁',value: 15226 },
+        {name: '黑龙江',value: 6717 },{name: '湖南',value: 20358 },
+        {name: '安徽',value: 18443 },{name: '山东',value: 34276 },
+        {name: '新疆',value: 4755 },{name: '江苏',value: 58426 },
+        {name: '浙江',value: 62955 },{name: '江西',value: 10982 },
+        {name: '湖北',value: 29550 },{name: '广西',value: 9658 },
+        {name: '甘肃',value: 4724 },{name: '山西',value: 7848 },
+        {name: '内蒙古',value: 3621 },{name: '陕西',value: 14615 },
+        {name: '吉林',value: 4684 },{name: '福建',value: 30764 },
+        {name: '贵州',value: 3453 },{name: '广东',value: 163794 },
+        {name: '青海',value: 784 },{name: '西藏',value: 818 },
+        {name: '四川',value: 31792 },{name: '宁夏',value: 1334 },
+        {name: '海南',value: 3977 },{name: '台湾',value: 1931 },
+        {name: '香港',value: 13213 },{name: '澳门',value: 1168 }
+    ];
+    let optionMap = {
+        backgroundColor: '#FFFFFF',
+        title: {
+            text: '用户地域分布',
+            x:'center',
+            top: 30
+        },
+        tooltip : {
+            trigger: 'item'
+        },
+        visualMap: {
+            min: 100000,
+            max: 10000,
+            left: 'left',
+            top: 'middle',
+            text:['高','低'],
+            // color:['#0052D4','#6FB1FC'],
+            calculable : true
+        },
+
+        //配置属性
+        series: [{
+            name: '数据',
+            type: 'map',
+            mapType: 'china',
+            label: {
+                normal: {
+                    show: true  //省份名称
+                },
+                emphasis: {
+                    show: false
+                }
+            },
+            data:mydata  //数据
+        }]
+    };
+
+    areaChart.setOption(optionMap);
+</script>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+
+<!-- Bootstrap 4 requires Popper.js -->
+<script src="https://unpkg.com/popper.js@1.14.1/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+<script src="scripts/application.js"></script>
+<script src="scripts/flat-ui.js"></script>
+</body>
+</html>

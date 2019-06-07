@@ -1,0 +1,539 @@
+package club.moredata.task;
+
+import club.moredata.api.ApiManager;
+import club.moredata.db.OrderType;
+import club.moredata.db.RebalancingType;
+import club.moredata.db.SQLBuilder;
+import club.moredata.entity.StockQuotep;
+import club.moredata.model.*;
+import club.moredata.util.Arith;
+import club.moredata.util.DBPoolConnection;
+import club.moredata.util.DateUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.PropertyFilter;
+import com.google.gson.Gson;
+import okhttp3.Response;
+
+import java.io.IOException;
+import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * 数据分析任务
+ *
+ * @author yeluodev1226
+ */
+public class AnalysisTask {
+
+    public static void main(String[] args) {
+        AnalysisTask task = new AnalysisTask();
+//        task.getCompleteBeforeId(1, 100);
+//        task.getCompleteBeforeId(2, 100);
+//        task.getCompleteBeforeId(1, 20);
+
+//        task.getSuspensionIds(1, 20, 1000, task.getCompleteBeforeId(1, 20));
+//        LeekResult<AlsStock> leekResult = task.stockRankList(1, 20, 20, false, OrderType.WEIGHT_DESC);
+
+//        LeekResult<AlsSegment> leekResult = task.segmentRankList(1, 20, OrderType.WEIGHT_DESC);
+//        System.out.println(JSON.toJSONString(leekResult));
+
+//        LeekResult<AlsRebalancing> leekResult = task.rebalancingRankList(1, 30, 3000, OrderType.CHANGE_WEIGHT_DESC,
+//                RebalancingType.ALL);
+//        PropertyFilter propertyFilter = (obj, name, value) -> {
+//            if(name.equalsIgnoreCase("cash")){
+//                return false;
+//            }
+//            return true;
+//        };
+//        System.out.println(JSON.toJSONString(leekResult,propertyFilter));
+
+        LeekResult leekResult = task.cubeRankList(1, Integer.MAX_VALUE);
+        PropertyFilter propertyFilter = (obj, name, value) -> {
+            if(name.equalsIgnoreCase("cash")){
+                return false;
+            }
+            return true;
+        };
+        System.out.println(JSON.toJSONString(leekResult,propertyFilter));
+
+//        task.getLatestUpdateTime(1, 30);
+//        task.snowballCubeList(1);
+    }
+
+    /**
+     * 获取还未完整更新组合详情的最小id，用于查询已完整更新的条件语句
+     *
+     * @param level
+     * @param cubeLimit
+     * @return
+     */
+    private int getCompleteBeforeId(int level, int cubeLimit) {
+        Connection connection = null;
+        int beforeId = 0;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            PreparedStatement countPs = connection.prepareStatement(SQLBuilder.buildRankCubeUpdateCount());
+            countPs.setInt(1, level);
+            countPs.setInt(2, cubeLimit);
+            ResultSet countResultSet = countPs.executeQuery();
+            if (countResultSet.next()) {
+                int size = countResultSet.getInt(1);
+                if (size > 0) {
+                    PreparedStatement queryPs = connection.prepareStatement(SQLBuilder.buildStartIdUpdateSeriesQuery());
+                    queryPs.setInt(1, level);
+                    ResultSet queryResultSet = queryPs.executeQuery();
+                    if (queryResultSet.next()) {
+                        beforeId = queryResultSet.getInt(1);
+                    }
+                    queryPs.close();
+                }
+            }
+            countPs.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return beforeId;
+    }
+
+    /**
+     * 获取个股停牌id
+     *
+     * @param level
+     * @param cubeLimit
+     * @param stockLimit
+     * @param beforeId
+     * @return
+     */
+    private String getSuspensionIds(int level, int cubeLimit, int stockLimit, int beforeId) {
+        Connection connection = null;
+        String stockIds = "";
+        String suspensionIds = "";
+        int limit = stockLimit;
+        int suspensionSize = 0;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            PreparedStatement stockIdQueryPs = connection.prepareStatement(SQLBuilder.buildRankStockIdsQuery());
+            stockIdQueryPs.setInt(1, level);
+            stockIdQueryPs.setInt(2, beforeId == 0 ? Integer.MAX_VALUE : beforeId);
+            stockIdQueryPs.setInt(3, cubeLimit);
+            ResultSet stockIdsResultSet = stockIdQueryPs.executeQuery();
+            List<Integer> stockIdList = new ArrayList<>();
+            while (stockIdsResultSet.next()) {
+                stockIdList.add(stockIdsResultSet.getInt(1));
+            }
+            stockIdQueryPs.close();
+
+            limit = stockLimit > stockIdList.size() ? (stockIdList.size() - 1) : (stockLimit - 1);
+            int tempCount = 0;
+            for (Integer stockId : stockIdList) {
+                if (tempCount < limit) {
+                    stockIds += stockId + "%2C";
+                    tempCount++;
+                    continue;
+                } else if (tempCount == limit) {
+                    stockIds += stockId + "%2C";
+                } else {
+                    stockIds = String.valueOf(stockId);
+                }
+                tempCount++;
+
+                Response response = ApiManager.getInstance().fetchStockQuotep(stockIds);
+                String res = response.body().string();
+                System.out.println(res);
+                JSONObject jsonObject = JSON.parseObject(res);
+                for (String key : jsonObject.keySet()) {
+                    Gson gson = new Gson();
+                    StockQuotep stockQuotep = gson.fromJson(jsonObject.getString(key), StockQuotep.class);
+                    if (stockQuotep.getFlag() == 2) {
+                        if (suspensionSize == 0) {
+                            suspensionIds = "'" + key + "'";
+                        } else {
+                            suspensionIds += ",'" + key + "'";
+                        }
+                        suspensionSize++;
+                    }
+                }
+                if (tempCount - suspensionSize >= stockLimit) {
+                    break;
+                }
+            }
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return suspensionIds;
+    }
+
+    /**
+     * 组合个股比重排行
+     *
+     * @param level
+     * @param cubeLimit
+     * @param stockLimit
+     * @param removeSuspensionStock
+     * @param orderType
+     * @return
+     */
+    public LeekResult<AlsStock> stockRankList(int level, int cubeLimit, int stockLimit, boolean removeSuspensionStock,
+                                              OrderType orderType) {
+        LeekResult<AlsStock> leekResult = null;
+        int beforeId = getCompleteBeforeId(level, cubeLimit);
+        String suspensionIds = removeSuspensionStock ? getSuspensionIds(level, cubeLimit, stockLimit, beforeId) : "";
+        Connection connection = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            PreparedStatement totalPs = connection.prepareStatement(SQLBuilder.buildStockTotalQuery(suspensionIds,
+                    beforeId, orderType));
+            totalPs.setInt(1, level);
+            totalPs.setInt(2, cubeLimit);
+            ResultSet totalResultSet = totalPs.executeQuery();
+            double cash = 0;
+            int count = 0;
+            if (totalResultSet.next()) {
+                cash = Arith.mul(Arith.sub(1, Arith.div(totalResultSet.getDouble(1), cubeLimit * 100.0, 8)),100);
+                count = totalResultSet.getInt(2);
+            }
+            totalPs.close();
+
+            PreparedStatement leekStockPs = connection.prepareStatement(SQLBuilder.buildStockRankQuery(suspensionIds,
+                    beforeId, orderType));
+            leekStockPs.setInt(1, level);
+            leekStockPs.setInt(2, cubeLimit);
+            leekStockPs.setInt(3, stockLimit);
+            leekStockPs.setInt(4, level);
+            leekStockPs.setInt(5, cubeLimit);
+            leekStockPs.setInt(6, stockLimit);
+            ResultSet resultSet = leekStockPs.executeQuery();
+            int rank = 0;
+            List<AlsStock> alsStockList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsStock alsStock = new AlsStock();
+                alsStock.setRank(rank);
+                alsStock.setStockName(resultSet.getString(1));
+                alsStock.setStockId(resultSet.getInt(2));
+                alsStock.setStockSymbol(resultSet.getString(3));
+                alsStock.setSegmentName(resultSet.getString(4));
+                alsStock.setSegmentColor(resultSet.getString(5));
+                alsStock.setWeight(resultSet.getDouble(6));
+                alsStock.setCount(resultSet.getInt(7));
+                alsStock.setPercent(resultSet.getDouble(8));
+                double percentWithCash = Arith.div(Arith.mul(Arith.sub(100,cash),resultSet.getDouble(8)),100,4);
+                alsStock.setPercentWithCash(percentWithCash);
+                alsStockList.add(alsStock);
+            }
+            leekStockPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCash(cash);
+            leekResult.setCount(count);
+            leekResult.setUpdatedAt(getLatestUpdateTime(level, cubeLimit));
+            leekResult.setList(alsStockList);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return leekResult;
+    }
+
+    /**
+     * 组合板块比重排行
+     *
+     * @param level
+     * @param cubeLimit
+     * @param orderType
+     * @return
+     */
+    public LeekResult<AlsSegment> segmentRankList(int level, int cubeLimit, OrderType orderType) {
+        int beforeId = getCompleteBeforeId(level, cubeLimit);
+        Connection connection = null;
+        LeekResult<AlsSegment> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            PreparedStatement leekSegmentPs = connection.prepareStatement(SQLBuilder.buildSegmentRankQuery(beforeId,
+                    orderType));
+            leekSegmentPs.setInt(1, level);
+            leekSegmentPs.setInt(2, cubeLimit);
+            leekSegmentPs.setInt(3, level);
+            leekSegmentPs.setInt(4, cubeLimit);
+            ResultSet resultSet = leekSegmentPs.executeQuery();
+            int rank = 0;
+            List<AlsSegment> alsSegmentList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsSegment alsSegment = new AlsSegment();
+                alsSegment.setRank(rank);
+                alsSegment.setSegmentName(resultSet.getString(1));
+                alsSegment.setSegmentColor(resultSet.getString(2));
+                alsSegment.setWeight(resultSet.getDouble(3));
+                alsSegment.setCount(resultSet.getInt(4));
+                alsSegment.setPercent(resultSet.getDouble(5));
+                alsSegment.setPercentWithCash(Arith.mul(Arith.div(resultSet.getDouble(3), cubeLimit * 100.0, 8),100));
+                alsSegmentList.add(alsSegment);
+            }
+            leekSegmentPs.close();
+
+            PreparedStatement totalPs = connection.prepareStatement(SQLBuilder.buildSegmentTotalQuery(beforeId, orderType));
+            totalPs.setInt(1, level);
+            totalPs.setInt(2, cubeLimit);
+            ResultSet totalResultSet = totalPs.executeQuery();
+            double cash = 0;
+            int count = 0;
+            if (totalResultSet.next()) {
+                cash = Arith.mul(Arith.sub(1, Arith.div(totalResultSet.getDouble(1), cubeLimit * 100.0, 8)),100);
+                count = totalResultSet.getInt(2);
+            }
+            totalPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCash(cash);
+            leekResult.setCount(count);
+            leekResult.setUpdatedAt(getLatestUpdateTime(level, cubeLimit));
+            leekResult.setList(alsSegmentList);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
+    }
+
+    /**
+     * 组合调仓排行
+     *
+     * @param level
+     * @param cubeLimit
+     * @param stockLimit
+     * @param orderType
+     * @return
+     */
+    public LeekResult<AlsRebalancing> rebalancingRankList(int level, int cubeLimit, int stockLimit,
+                                                          OrderType orderType, RebalancingType rebalancingType) {
+        int beforeId = getCompleteBeforeId(level, cubeLimit);
+        String diaplayDate = DateUtil.getInstance().transactionDataDate(System.currentTimeMillis());
+        Connection connection = null;
+        LeekResult<AlsRebalancing> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            Date date = new SimpleDateFormat("yyyyMMdd").parse(diaplayDate);
+            long startTimestamp = DateUtil.getInstance().getDayStartTimestamp(date);
+            long endTimestamp = DateUtil.getInstance().getDayEndTimestamp(date);
+            PreparedStatement rebalancingPs = connection.prepareStatement(SQLBuilder.buildRebalancingRankQuery(beforeId,
+                    orderType, rebalancingType));
+            rebalancingPs.setInt(1, level);
+            rebalancingPs.setInt(2, cubeLimit);
+            rebalancingPs.setLong(3, startTimestamp);
+            rebalancingPs.setLong(4, endTimestamp);
+            rebalancingPs.setInt(5, stockLimit);
+            ResultSet resultSet = rebalancingPs.executeQuery();
+            int rank = 0;
+            List<AlsRebalancing> alsRebalancingList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsRebalancing alsRebalancing = new AlsRebalancing();
+                alsRebalancing.setRank(rank);
+                alsRebalancing.setStockName(resultSet.getString(1));
+                alsRebalancing.setStockSymbol(resultSet.getString(2));
+                alsRebalancing.setChangWeight(resultSet.getDouble(3));
+                alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeLimit * 100.0, 8));
+                alsRebalancingList.add(alsRebalancing);
+            }
+            rebalancingPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCount(alsRebalancingList.size());
+            leekResult.setUpdatedAt(getLatestUpdateTime(level, cubeLimit));
+            leekResult.setList(alsRebalancingList);
+        } catch (SQLException | ParseException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
+    }
+
+    /**
+     * 组合在榜天数排行
+     *
+     * @param level
+     * @param cubeLimit
+     * @return
+     */
+    public LeekResult<AlsCube> cubeRankList(int level, int cubeLimit) {
+        Connection connection = null;
+        LeekResult<AlsCube> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            PreparedStatement cubePs = connection.prepareStatement(SQLBuilder.buildCubeShowDaysRankQuery());
+            cubePs.setInt(1, level);
+            cubePs.setInt(2, cubeLimit);
+            ResultSet resultSet = cubePs.executeQuery();
+            int rank = 0;
+            List<AlsCube> alsCubeList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsCube alsCube = new AlsCube();
+                alsCube.setRank(rank);
+                alsCube.setName(resultSet.getString(1));
+                alsCube.setSymbol(resultSet.getString(2));
+                alsCube.setNetValue(resultSet.getDouble(3));
+                alsCube.setScreenName(resultSet.getString(4));
+                alsCube.setPhotoDomain(resultSet.getString(5));
+                alsCube.setProfileImageUrl(resultSet.getString(6));
+                alsCube.setShowDaysCount(resultSet.getInt(7));
+                alsCube.setGainOnLevel(resultSet.getDouble(8));
+                alsCubeList.add(alsCube);
+            }
+            cubePs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCount(alsCubeList.size());
+            leekResult.setUpdatedAt(getLatestUpdateTime(level, cubeLimit));
+            leekResult.setList(alsCubeList);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
+    }
+
+    /**
+     * 最新一期雪球风云榜
+     * @param level
+     * @return
+     */
+    public LeekResult<AlsCube> snowballCubeList(int level){
+        int beforeId = getCompleteBeforeId(level, 100);
+        Connection connection = null;
+        LeekResult<AlsCube> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            PreparedStatement snowballPs =
+                    connection.prepareStatement(SQLBuilder.buildSnowballCubeQuery(beforeId));
+            snowballPs.setInt(1, level);
+            ResultSet resultSet = snowballPs.executeQuery();
+            List<AlsCube> alsCubeList = new ArrayList<>();
+            while (resultSet.next()) {
+                AlsCube alsCube = new AlsCube();
+                alsCube.setRank(resultSet.getInt(1));
+                alsCube.setName(resultSet.getString(2));
+                alsCube.setSymbol(resultSet.getString(3));
+                alsCube.setNetValue(resultSet.getDouble(4));
+                alsCube.setScreenName(resultSet.getString(5));
+                alsCube.setPhotoDomain(resultSet.getString(6));
+                alsCube.setProfileImageUrl(resultSet.getString(7));
+                alsCube.setGainOnLevel(resultSet.getDouble(8));
+                alsCubeList.add(alsCube);
+            }
+            snowballPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCount(alsCubeList.size());
+            leekResult.setUpdatedAt(getLatestUpdateTime(level, 100));
+            leekResult.setList(alsCubeList);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
+    }
+
+    /**
+     * 更新时间
+     *
+     * @param level
+     * @param cubeLimit
+     * @return
+     */
+    public String getLatestUpdateTime(int level, int cubeLimit) {
+        int beforeId = getCompleteBeforeId(level, cubeLimit);
+        Connection connection = null;
+        String updateTime = "";
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            PreparedStatement updateTimePs =
+                    connection.prepareStatement(SQLBuilder.buildLatestUpdateTimeQuery(beforeId));
+            updateTimePs.setInt(1, level);
+            ResultSet resultSet = updateTimePs.executeQuery();
+            if (resultSet.next()) {
+                Timestamp timestamp = resultSet.getTimestamp(1);
+                updateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(timestamp.getTime()));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return updateTime;
+    }
+
+}
