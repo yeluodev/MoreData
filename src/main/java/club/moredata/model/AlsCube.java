@@ -14,6 +14,7 @@ public class AlsCube implements Serializable {
     private String symbol = "";
     private double netValue = 0;
     private double gainOnLevel = 0;
+    private long ownerId = 0;
     private String screenName = "";
     private String photoDomain = "";
     private String profileImageUrl = "";
@@ -57,6 +58,14 @@ public class AlsCube implements Serializable {
 
     public void setGainOnLevel(double gainOnLevel) {
         this.gainOnLevel = gainOnLevel;
+    }
+
+    public long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(long ownerId) {
+        this.ownerId = ownerId;
     }
 
     public String getScreenName() {

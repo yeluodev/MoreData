@@ -37,8 +37,9 @@ public class AnalysisTask {
 //        task.getCompleteBeforeId(1, 20);
 
 //        task.getSuspensionIds(1, 20, 1000, task.getCompleteBeforeId(1, 20));
-//        LeekResult<AlsStock> leekResult = task.stockRankList(1, 20, 20, false, OrderType.WEIGHT_DESC);
+        LeekResult<AlsStock> leekResult = task.stockRankList(1, 100, 3000, false, OrderType.WEIGHT_DESC);
 
+        System.out.println(JSON.toJSONString(leekResult));
 //        LeekResult<AlsSegment> leekResult = task.segmentRankList(1, 20, OrderType.WEIGHT_DESC);
 //        System.out.println(JSON.toJSONString(leekResult));
 
@@ -52,14 +53,14 @@ public class AnalysisTask {
 //        };
 //        System.out.println(JSON.toJSONString(leekResult,propertyFilter));
 
-        LeekResult leekResult = task.cubeRankList(1, Integer.MAX_VALUE);
-        PropertyFilter propertyFilter = (obj, name, value) -> {
-            if(name.equalsIgnoreCase("cash")){
-                return false;
-            }
-            return true;
-        };
-        System.out.println(JSON.toJSONString(leekResult,propertyFilter));
+//        LeekResult leekResult = task.cubeRankList(1, Integer.MAX_VALUE);
+//        PropertyFilter propertyFilter = (obj, name, value) -> {
+//            if(name.equalsIgnoreCase("cash")){
+//                return false;
+//            }
+//            return true;
+//        };
+//        System.out.println(JSON.toJSONString(leekResult,propertyFilter));
 
 //        task.getLatestUpdateTime(1, 30);
 //        task.snowballCubeList(1);
@@ -77,24 +78,32 @@ public class AnalysisTask {
         int beforeId = 0;
         try {
             connection = DBPoolConnection.getInstance().getConnection();
-            PreparedStatement countPs = connection.prepareStatement(SQLBuilder.buildRankCubeUpdateCount());
-            countPs.setInt(1, level);
-            countPs.setInt(2, cubeLimit);
-            ResultSet countResultSet = countPs.executeQuery();
-            if (countResultSet.next()) {
-                int size = countResultSet.getInt(1);
-                if (size > 0) {
-                    PreparedStatement queryPs = connection.prepareStatement(SQLBuilder.buildStartIdUpdateSeriesQuery());
-                    queryPs.setInt(1, level);
-                    ResultSet queryResultSet = queryPs.executeQuery();
-                    if (queryResultSet.next()) {
-                        beforeId = queryResultSet.getInt(1);
+            int lastId = Integer.MAX_VALUE;
+            while (true) {
+                PreparedStatement countPs = connection.prepareStatement(SQLBuilder.buildRankCubeUpdateCount());
+                countPs.setInt(1, level);
+                countPs.setInt(2, lastId);
+                countPs.setInt(3, cubeLimit);
+                ResultSet countResultSet = countPs.executeQuery();
+                if (countResultSet.next()) {
+                    int size = countResultSet.getInt(1);
+                    if (size > 0) {
+                        PreparedStatement queryPs = connection.prepareStatement(SQLBuilder.buildStartIdUpdateSeriesQuery());
+                        queryPs.setInt(1, level);
+                        queryPs.setInt(2, lastId);
+                        ResultSet queryResultSet = queryPs.executeQuery();
+                        if (queryResultSet.next()) {
+                            beforeId = queryResultSet.getInt(1);
+                            lastId = beforeId;
+                        }
+                        queryPs.close();
+                    }else {
+                        countPs.close();
+                        break;
                     }
-                    queryPs.close();
                 }
+                countPs.close();
             }
-            countPs.close();
-
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -426,11 +435,12 @@ public class AnalysisTask {
                 alsCube.setName(resultSet.getString(1));
                 alsCube.setSymbol(resultSet.getString(2));
                 alsCube.setNetValue(resultSet.getDouble(3));
-                alsCube.setScreenName(resultSet.getString(4));
-                alsCube.setPhotoDomain(resultSet.getString(5));
-                alsCube.setProfileImageUrl(resultSet.getString(6));
-                alsCube.setShowDaysCount(resultSet.getInt(7));
-                alsCube.setGainOnLevel(resultSet.getDouble(8));
+                alsCube.setOwnerId(resultSet.getLong(4));
+                alsCube.setScreenName(resultSet.getString(5));
+                alsCube.setPhotoDomain(resultSet.getString(6));
+                alsCube.setProfileImageUrl(resultSet.getString(7));
+                alsCube.setShowDaysCount(resultSet.getInt(8));
+                alsCube.setGainOnLevel(resultSet.getDouble(9));
                 alsCubeList.add(alsCube);
             }
             cubePs.close();
@@ -475,10 +485,11 @@ public class AnalysisTask {
                 alsCube.setName(resultSet.getString(2));
                 alsCube.setSymbol(resultSet.getString(3));
                 alsCube.setNetValue(resultSet.getDouble(4));
-                alsCube.setScreenName(resultSet.getString(5));
-                alsCube.setPhotoDomain(resultSet.getString(6));
-                alsCube.setProfileImageUrl(resultSet.getString(7));
-                alsCube.setGainOnLevel(resultSet.getDouble(8));
+                alsCube.setOwnerId(resultSet.getLong(5));
+                alsCube.setScreenName(resultSet.getString(6));
+                alsCube.setPhotoDomain(resultSet.getString(7));
+                alsCube.setProfileImageUrl(resultSet.getString(8));
+                alsCube.setGainOnLevel(resultSet.getDouble(9));
                 alsCubeList.add(alsCube);
             }
             snowballPs.close();

@@ -34,7 +34,7 @@ public class AccountServlet extends HttpServlet {
 
         String matchPath = request.getHttpServletMapping().getMatchValue();
         AccountTask task = new AccountTask();
-        LeekResult leekResult = null;
+        LeekResult leekResult;
         LeekResponse leekResponse;
         switch (matchPath) {
             case "gender":
@@ -42,7 +42,7 @@ public class AccountServlet extends HttpServlet {
                 leekResponse = LeekResponse.generateResponse(leekResult);
                 break;
             case "area":
-                leekResult = task.accountGenderListDealed();
+                leekResult = task.accountAreaListDealed();
                 leekResponse = LeekResponse.generateResponse(leekResult);
                 break;
             case "activation":

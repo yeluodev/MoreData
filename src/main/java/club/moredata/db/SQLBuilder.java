@@ -65,7 +65,7 @@ public class SQLBuilder {
     public static String buildUpdateCubeQuery() {
         return "SELECT `rank_cubes`.`_id`,`cube`.`symbol`,`cube`.`id` FROM `rank_cubes`,`cube` WHERE `rank_cubes`" +
                 ".`view_rebalancing_id` = 0 AND `rank_cubes`.`id`=`cube`.`id` ORDER BY `rank_cubes`.`update_time` ASC" +
-                " LIMIT 5;";
+                " LIMIT 10;";
     }
 
     /**
@@ -138,7 +138,7 @@ public class SQLBuilder {
      * @return
      */
     public static String buildRankCubeUpdateCount() {
-        return "SELECT COUNT(*) FROM (SELECT * FROM (SELECT * FROM `rank_cubes` WHERE `cube_level` = ? ORDER BY " +
+        return "SELECT COUNT(*) FROM (SELECT * FROM (SELECT * FROM `rank_cubes` WHERE `cube_level` = ? AND `_id` < ? ORDER BY " +
                 "`update_time` DESC LIMIT 100) AS `t` ORDER BY `t`.`rank` ASC LIMIT ?) as `m` WHERE `m`" +
                 ".`view_rebalancing_id` = 0;";
     }
@@ -149,7 +149,7 @@ public class SQLBuilder {
      * @return
      */
     public static String buildStartIdUpdateSeriesQuery() {
-        return "SELECT `_id`,`update_time` FROM (SELECT * FROM `rank_cubes` WHERE `cube_level` = ? ORDER BY `_id` DESC " +
+        return "SELECT `_id`,`update_time` FROM (SELECT * FROM `rank_cubes` WHERE `cube_level` = ? AND `_id` < ? ORDER BY `_id` DESC " +
                 "LIMIT 100) AS t ORDER BY t.`_id` ASC LIMIT 1;";
     }
 
@@ -284,7 +284,7 @@ public class SQLBuilder {
      * @return
      */
     public static String buildCubeShowDaysRankQuery() {
-        return "SELECT `cube`.`name`,`cube`.`symbol`,`cube`.`net_value`,`user`.`screen_name`,`user`.`photo_domain`,`user`" +
+        return "SELECT `cube`.`name`,`cube`.`symbol`,`cube`.`net_value`,`user`.`id`,`user`.`screen_name`,`user`.`photo_domain`,`user`" +
                 ".`profile_image_url`,count(*) AS `showCount`,`rank_cubes`.`gain_on_level` FROM `rank_cubes`,`cube`," +
                 "`user` WHERE `rank_cubes`.`_id` IN(SELECT `temp`.`_id` FROM (SELECT substring_index(group_concat" +
                 "(`_id` order by `update_time` desc),',',1) as `_id` FROM `rank_cubes` group by DATE_FORMAT" +
@@ -312,7 +312,7 @@ public class SQLBuilder {
      */
     public static String buildSnowballCubeQuery(int beforeId) {
         String sql = "SELECT `temp`.* FROM (SELECT `rank_cubes`.`rank`, `cube`.`name`,`cube`.`symbol`,`cube`" +
-                ".`net_value`,`user`.`screen_name`,`user`.`photo_domain`,`user`.`profile_image_url`,`rank_cubes`" +
+                ".`net_value`,`user`.`id`,`user`.`screen_name`,`user`.`photo_domain`,`user`.`profile_image_url`,`rank_cubes`" +
                 ".`gain_on_level` FROM `rank_cubes`,`cube`,`user` WHERE `rank_cubes`.`id` = `cube`.`id` AND `cube`" +
                 ".`owner_id` = `user`.`id` AND `rank_cubes`.`cube_level` = ? %s ORDER BY `rank_cubes`.`_id` DESC " +
                 "LIMIT 100) AS `temp` ORDER BY `temp`.`rank` ASC;";

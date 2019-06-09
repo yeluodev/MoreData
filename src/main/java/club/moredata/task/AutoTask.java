@@ -26,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -42,22 +43,12 @@ public class AutoTask {
 
 //        task.compressImage("");
 
-        System.out.println(task.newPost(""));
+//        System.out.println(task.newPost(""));
+        task.trackCube(1, 100, 15, true, false, OrderType.WEIGHT_DESC);
     }
 
-    /**
-     * 调仓
-     *
-     * @param level
-     * @param cubeLimit
-     * @param stockLimit
-     * @param removeSuspensionStock
-     * @param noCash
-     * @param orderType
-     */
-    public Rebalancing rebalancingCube(int level, int cubeLimit, int stockLimit, boolean removeSuspensionStock,
-                                       boolean noCash, OrderType orderType) {
-        Rebalancing rebalancing = null;
+    public LeekResult<RebStock> trackCube(int level, int cubeLimit, int stockLimit, boolean removeSuspensionStock,
+                                    boolean noCash, OrderType orderType) {
         AnalysisTask task = new AnalysisTask();
         LeekResult<AlsStock> leekResult = task.stockRankList(level, cubeLimit, stockLimit, removeSuspensionStock,
                 orderType);
@@ -92,6 +83,33 @@ public class AutoTask {
             }
         }
 
+        rebStockList.sort(Comparator.comparingInt(RebStock::getWeight));
+        Collections.reverse(rebStockList);
+
+        LeekResult<RebStock> result = new LeekResult<>();
+        result.setCash(cash);
+        result.setCount(rebStockList.size());
+        result.setUpdatedAt(DateUtil.getInstance().getDate(System.currentTimeMillis()));
+        result.setList(rebStockList);
+
+        return result;
+    }
+
+    /**
+     * 调仓
+     *
+     * @param level
+     * @param cubeLimit
+     * @param stockLimit
+     * @param removeSuspensionStock
+     * @param noCash
+     * @param orderType
+     */
+    public Rebalancing rebalancingCube(int level, int cubeLimit, int stockLimit, boolean removeSuspensionStock,
+                                       boolean noCash, OrderType orderType) {
+        Rebalancing rebalancing = null;
+        LeekResult<RebStock> leekResult = trackCube(level, cubeLimit, stockLimit, removeSuspensionStock, noCash, orderType);
+
         int cubeId = 0;
         String date = DateUtil.getInstance().getDate(System.currentTimeMillis());
         String format = "%s风云榜跟踪-%s每日自动调仓 by yeluodev1226";
@@ -113,9 +131,9 @@ public class AutoTask {
                 break;
         }
 //        cubeId = 1982218;
-        String holdings = JSON.toJSONString(rebStockList, (PropertyFilter) (object, name, value) -> !name.equals("source_weight") && !name.equals("source_decimal"));
+        String holdings = JSON.toJSONString(leekResult.getList(), (PropertyFilter) (object, name, value) -> !name.equals("source_weight") && !name.equals("source_decimal"));
 
-        Response response = ApiManager.getInstance().rebalancingCube(cubeId, cash, holdings, comment);
+        Response response = ApiManager.getInstance().rebalancingCube(cubeId, (int) leekResult.getCash(), holdings, comment);
         if (response.code() >= 200 && response.code() < 300) {
             try {
                 String result = response.body().string();
@@ -141,6 +159,7 @@ public class AutoTask {
 
     /**
      * 发帖
+     *
      * @param fileName
      * @return
      */
@@ -155,7 +174,7 @@ public class AutoTask {
                 String result = uploadResponse.body().string();
                 System.out.println(result);
                 Gson gson = new Gson();
-                uploadImage = gson.fromJson(result,UploadImage.class);
+                uploadImage = gson.fromJson(result, UploadImage.class);
             }
 
             connection = DBPoolConnection.getInstance().getConnection();
@@ -182,7 +201,7 @@ public class AutoTask {
             if (response != null && response.code() >= 200 && response.code() < 300) {
                 String result = response.body().string();
                 Gson gson = new Gson();
-                post = gson.fromJson(result,Post.class);
+                post = gson.fromJson(result, Post.class);
 
             }
 

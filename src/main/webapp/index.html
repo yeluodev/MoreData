@@ -2,7 +2,8 @@
 <!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>更多数据</title>
+    <link href="favicon.ico" rel="icon">
     <!-- Loading Bootstrap -->
     <link href="css/vendor/bootstrap.min.css" rel="stylesheet">
     <!-- Loading Flat UI Pro -->
@@ -29,6 +30,7 @@
         .flex {
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         h6 {
@@ -177,6 +179,16 @@
             width: 100%;
         }
 
+        #area-table > table > tbody > tr > td {
+            width: 0;
+            margin: 0 16px;
+            text-align: right;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
     </style>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -203,8 +215,59 @@
             ['rank', 'stockName', 'stockSymbol', 'percent'],
             ['rank', 'name', 'symbol', 'screenName', 'netValue', 'showDaysCount']];
         let selectors = ['a.segment', 'a.dimension'];
+        let chartMode = !1;
 
         $(function () {
+            $('#track-cube').on('click', function () {
+                fetchTrackCube(level);
+            });
+            $('#myModal').on('shown.bs.modal', function (event) {
+                console.log(event);
+                let modal = $(this);
+                console.log(modal.find('#track-cube-content'))
+                let data = trackCubeArr[level].data;
+                let list = data.list;
+                let html = '';
+                //TODO 样式待调整
+                list.forEach(function (item) {
+                    html += item['stock_name'] + '---' + item['weight'] + '<br/>';
+                });
+
+                modal.find('#myModalLabel').text('风云榜跟踪组合--' + data['updatedAt']);
+                modal.find('#track-cube-content')[0].innerHTML = html;
+            });
+
+            $('#data-container').show();
+            $('#chart-container').hide();
+
+            //监听数据/图表展示方式的切换
+            $('#chart-way').on("click", function () {
+                $('#data-container').hide();
+                $('#chart-container').show();
+                accountPathArr.forEach(function (value, index, array) {
+                    fetchAccountData(value, index);
+                });
+            });
+            $('#data-way').on("click", function () {
+                $('#data-container').show();
+                $('#chart-container').hide();
+            });
+
+            $('#switch-mode').on("click", function () {
+                if (chartMode) {
+                    $('#data-container').show();
+                    $('#chart-container').hide();
+                } else {
+                    $('#data-container').hide();
+                    $('#chart-container').show();
+                    accountPathArr.forEach(function (value, index, array) {
+                        fetchAccountData(value, index);
+                    });
+                }
+                chartMode = !chartMode;
+            });
+
+
             selectors.forEach(function (value) {
                 $(value).mouseenter(function () {
                     if ($(this).hasClass('active')) {
@@ -333,6 +396,16 @@
 
 
                 paramKeys[type].forEach(function (value) {
+                    if (type === 4 && value === 'symbol') {
+                        html += '<td><a target="_blank" href="https://xueqiu.com/P/' + item[value] + '">' + item[value] + '</a></td>';
+                        return;
+                    }
+
+                    if (type === 4 && value === 'screenName') {
+                        html += '<td><a target="_blank" href="https://xueqiu.com/u/' + item['ownerId'] + '">' + item[value] + '</a></td>';
+                        return;
+                    }
+
                     if (value === 'percent'
                         || value === 'percentWithCash'
                         || value === 'netValue') {
@@ -374,16 +447,72 @@
             }
         }
 
+
+        let trackCubeArr = [];
+
+        /**
+         * 请求接口数据
+         * @param type
+         * @param level
+         */
+        function fetchTrackCube(level) {
+            if (trackCubeArr[level] != null) {
+                console.log(JSON.stringify(trackCubeArr[level]));
+                $('#track-cube-content').innerText = JSON.stringify(trackCubeArr[level]);
+                $('#track-cube-content').innerHTML = '<h2>测试更改内容</h2>';
+                return;
+            }
+
+
+            let ajax = new XMLHttpRequest();
+            ajax.open('get', 'http://118.25.182.189/moredata/cube/track?level=' + level);
+            ajax.send();
+            ajax.onreadystatechange = function () {
+                if (ajax.readyState === 4 && ajax.status === 200) {
+                    let responseText = ajax.responseText;
+                    trackCubeArr[level] = JSON.parse(responseText);
+                }
+            }
+        }
+
     </script>
 </head>
 <body>
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel">
+                    风云榜跟踪组合
+                </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+
+            </div>
+            <div class="modal-body" id="track-cube-content">
+                在这里添加一些文本
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                </button>
+                <button type="button" class="btn btn-primary">
+                    提交更改
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
 <nav class="navbar navbar-inverse navbar-embossed navbar-expand-lg head" role="navigation">
-    <div class="navbar-brand">更多数据</div>
+    <!--<div class="navbar-brand">更多数据</div>-->
+    <img src="moredata.png" style="width:125px;height:40px;"/>
     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse-01"></button>
     <div class="collapse navbar-collapse" id="navbar-collapse-01" style="border: none;box-shadow: none;">
         <ul class="nav navbar-nav mr-auto">
-            <li><a href="#fakelink">数据</a></li>
-            <li><a href="#fakelink">图表</a></li>
+            <li><a id="data-way" href="#fakelink">数据</a></li>
+            <li><a id="chart-way" href="#fakelink">图表</a></li>
             <li><a href="#fakelink">关于</a></li>
         </ul>
         <form class="navbar-form form-inline my-2 my-lg-0" action="#" role="search">
@@ -427,6 +556,10 @@
         <a id="year" class="duration" href="javascript:void(0);">近一年
             <div class="bottom-line transparent"></div>
         </a>
+        <div style="flex: 1;"></div>
+        <a id="track-cube" href="javascript:void(0);" data-toggle="modal" data-target="#myModal">
+            <b>查看跟踪组合</b>
+        </a>
     </div>
     <div class="hr"></div>
     <!--<div class="btn-toolbar">-->
@@ -455,11 +588,12 @@
 
 </div>
 
-<div class="card">
+<div class="card" id="account-data-card">
     <div class="flex" style="height: 48px;">
-        <div class="duration" href="javascript:void(0);">雪球网用户数据
+        <div class="duration" href="javascript:void(0);">雪球网用户数据一览
             <div class="bottom-line"></div>
         </div>
+        <a id="switch-mode" href="javascrip:void(0);"><b style="color:#1b1e21;">切换模式</b></a>
         <span style="flex:1;text-align:right;font-size: 14px;">
             数据中存在一些不规范和非法数据，可能是雪球网升级过程中的历史遗留，因此剔除了该类数据。分析基于五月份平台数据
         </span>
@@ -474,185 +608,255 @@
             <a id="fans" class="dimension btn" href="#fakelink">粉丝值</a>
         </div>
     </div>
-    <div class="flex" style="margin-top: 12px;">
-        <div id="gender-chart" style="flex: 1;height:300px;"></div>
-        <div id="activation-chart" style="flex: 1;height:300px;"></div>
-        <div id="fans-chart" style="flex: 1;height:300px;"></div>
+
+    <div id="data-container" style="width: 100%">
+        <div class="flex" style="margin-top: 12px;">
+            <b style="flex: 1;text-align: center">性别分布</b>
+            <b style="flex: 1;margin: 0 1px;text-align: center">活跃度分布</b>
+            <b style="flex: 1;text-align: center">粉丝值区间</b>
+        </div>
+
+        <div class="flex" style="margin-top: 12px;">
+            <div id="gender-table" style="flex: 1;"></div>
+            <div id="activation-table" style="flex: 1;margin: 0 1px;"></div>
+            <div id="fans-table" style="flex: 1;"></div>
+        </div>
+        <div class="flex" style="margin-top: 12px;">
+            <b style="width: 100%;text-align: center;">用户地域分布</b>
+        </div>
+        <div id="area-table" style="width: 100%;margin: 12px 0;"></div>
     </div>
-    <div id="area-chart" style="width: 100%;height:800px;"></div>
+
+
+    <div id="chart-container" style="width: 100%">
+        <div class="flex" style="margin-top: 12px;">
+            <div id="gender-chart" style="flex: 1;height:400px;"></div>
+            <div id="activation-chart" style="flex: 1;margin: 0 1px;height:400px;"></div>
+            <div id="fans-chart" style="flex: 1;height:400px;"></div>
+        </div>
+        <div id="area-chart" style="width: 100%;margin: 12px 0;height:800px;"></div>
+    </div>
+
     <!--<div style="height:600px;">-->
-    </div>
-
 </div>
+
+<footer class="flex"
+        style="background-color:#F8F8F8;width: 100%;height: 72px;padding:0 72px;flex-direction: row-reverse;">
+    <a href="javascrip:void(0);" style="width:120px;text-align: right;">意见反馈</a>
+    <b style="flex:1;text-align: center">数据来源雪球，仅供参考</b>
+    <span style="width:120px;"></span>
+</footer>
+
 <script>
-    let genderChart = echarts.init(document.getElementById('gender-chart'),'walden');
-    genderChart.setOption({
-        title: {
-            text: '用户性别分布',
-            x:'center',
-            top: 20
-        },
-        tooltip: {
-            trigger: 'item',
-            formatter: "{a} <br/>{b}: {c} ({d}%)"
-        },
-        legend: {
-            top: '30%',
-            orient: 'vertical',
-            x: 'left',
-            data: ['男性', '女性', '保密']
-        },
-        series: [
-            {
-                name: '性别分布',
-                type: 'pie',
-                radius: '60%',
-                center: ['50%','60%'],
-                startAngle: 180,
-                hoverAnimation: false,
-                selectedMode: false,
-                data: [
-                    {value: 415452, name: '男性'},
-                    {value: 87066, name: '女性'},
-                    {value: 6756543, name: '保密'}
-                ]
-            }
-        ]
+    let accountHeadArr = ['性别', '活跃度', '粉丝值'];
+    let accountTableIdArr = ['gender-table', 'activation-table', 'fans-table',];
+    let accountChartIdArr = ['gender-chart', 'activation-chart', 'fans-chart', 'area-chart'];
+    let accountPathArr = ['gender', 'activation', 'fans', 'area'];
+    let accountDataArr = [];
+    accountPathArr.forEach(function (value, index, array) {
+        fetchAccountData(value, index);
     });
 
-    let fansChart = echarts.init(document.getElementById('fans-chart'),'walden');
-    fansChart.setOption({
-        title: {
-            text: '粉丝值区间分布',
-            x:'center',
-            top: 20
-        },
-        tooltip: {
-            trigger: 'item',
-            formatter: "{a} <br/>{b}: {c} ({d}%)"
-        },
-        legend: {
-            top: '30%',
-            orient: 'vertical',
-            x: 'right',
-            data: ['无人关注', '1~10', '11~100','101~1000', '1001~10000','10001~10万', '>10万']
-        },
-        series: [
-            {
-                name: '粉丝值区间分布',
-                type: 'pie',
-                radius: '60%',
-                center: ['50%','60%'],
-                startAngle: 180,
-                hoverAnimation: false,
-                selectedMode: false,
-                data: [
-                    {value: 5911534, name: '无人关注'},
-                    {value: 1164854, name: '1~10'},
-                    {value: 128151, name: '11~100'},
-                    {value: 38269, name: '101~1000'},
-                    {value: 11122, name: '1001~10000'},
-                    {value: 5009, name: '10001~10万'},
-                    {value: 122, name: '>10万'},
-                ]
+    /**
+     * 请求接口数据
+     * @param type
+     * @param level
+     */
+    function fetchAccountData(type, index) {
+        console.log('拉取数据画图表')
+        if (accountDataArr[index] != null) {
+            console.log('数据不为空')
+            if (index < 3) {
+                createAccountTable(type, index);
+            } else {
+                createAreaTable();
             }
-        ]
-    });
+            drawChart(type, index);
+            return;
+        }
 
-    let activationChart = echarts.init(document.getElementById('activation-chart'),'walden');
-    activationChart.setOption({
-        title: {
-            text: '活跃度区间分布(发言数)',
-            x:'center',
-            top: 20
-        },
-        tooltip: {
-            trigger: 'item',
-            formatter: "{a} <br/>{b}: {c} ({d}%)"
-        },
-        legend: {
-            top: '60px',
-            x: 'center',
-            data: ['无发言', '1~10', '11~100','101~1000','>1000']
-        },
-        series: [
-            {
-                name: '活跃度区间分布(发言数)',
-                type: 'pie',
-                radius: '60%',
-                center: ['50%','60%'],
-                startAngle: 180,
-                hoverAnimation: false,
-                selectedMode: false,
-                data: [
-                    {value: 4958086, name: '无发言'},
-                    {value: 1630273, name: '1~10'},
-                    {value: 547036, name: '11~100'},
-                    {value: 114830, name: '101~1000'},
-                    {value: 8836, name: '>1000'},
-                ]
-            }
-        ]
-    })
-
-    let areaChart = echarts.init(document.getElementById('area-chart'),'walden');
-    var mydata = [
-        {name: '北京',value: 159469 },{name: '天津',value: 10784 },
-        {name: '上海',value: 117347 },{name: '重庆',value: 15623 },
-        {name: '河北',value: 14277 },{name: '河南',value: 21499 },
-        {name: '云南',value: 6535 },{name: '辽宁',value: 15226 },
-        {name: '黑龙江',value: 6717 },{name: '湖南',value: 20358 },
-        {name: '安徽',value: 18443 },{name: '山东',value: 34276 },
-        {name: '新疆',value: 4755 },{name: '江苏',value: 58426 },
-        {name: '浙江',value: 62955 },{name: '江西',value: 10982 },
-        {name: '湖北',value: 29550 },{name: '广西',value: 9658 },
-        {name: '甘肃',value: 4724 },{name: '山西',value: 7848 },
-        {name: '内蒙古',value: 3621 },{name: '陕西',value: 14615 },
-        {name: '吉林',value: 4684 },{name: '福建',value: 30764 },
-        {name: '贵州',value: 3453 },{name: '广东',value: 163794 },
-        {name: '青海',value: 784 },{name: '西藏',value: 818 },
-        {name: '四川',value: 31792 },{name: '宁夏',value: 1334 },
-        {name: '海南',value: 3977 },{name: '台湾',value: 1931 },
-        {name: '香港',value: 13213 },{name: '澳门',value: 1168 }
-    ];
-    let optionMap = {
-        backgroundColor: '#FFFFFF',
-        title: {
-            text: '用户地域分布',
-            x:'center',
-            top: 30
-        },
-        tooltip : {
-            trigger: 'item'
-        },
-        visualMap: {
-            min: 100000,
-            max: 10000,
-            left: 'left',
-            top: 'middle',
-            text:['高','低'],
-            // color:['#0052D4','#6FB1FC'],
-            calculable : true
-        },
-
-        //配置属性
-        series: [{
-            name: '数据',
-            type: 'map',
-            mapType: 'china',
-            label: {
-                normal: {
-                    show: true  //省份名称
-                },
-                emphasis: {
-                    show: false
+        let ajax = new XMLHttpRequest();
+        ajax.open('get', 'http://118.25.182.189/moredata/account/' + type);
+        ajax.send();
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState === 4 && ajax.status === 200) {
+                let chart = ajax.responseText;
+                chart = JSON.parse(chart);
+                accountDataArr[index] = chart;
+                console.log(chart);
+                if (index < 3) {
+                    createAccountTable(type, index);
+                } else {
+                    createAreaTable();
                 }
-            },
-            data:mydata  //数据
-        }]
-    };
+            }
+        }
+    }
 
-    areaChart.setOption(optionMap);
+    function createAreaTable() {
+        let list = accountDataArr[3].data.list;
+        let html = "<table>";
+        let htmlArr = ['', '', '', '', '', ''];
+
+        list.forEach(function (item, index, array) {
+            let tempIndex = parseInt(index / 12) * 2;
+            console.log(tempIndex);
+            htmlArr[tempIndex] += '<td style="flex: 1;">' + item['name'] + '</td>';
+            htmlArr[tempIndex + 1] += '<td style="flex: 1;">' + item['count'] + '</td>';
+        });
+        console.log(htmlArr);
+
+        html += '<tr><th>省份</th>' + htmlArr[0] + '</tr>';
+        html += '<tr><th>人数</th>' + htmlArr[1] + '</tr>';
+        html += '<tr><th>省份</th>' + htmlArr[2] + '</tr>';
+        html += '<tr><th>人数</th>' + htmlArr[3] + '</tr>';
+        html += '<tr><th>省份</th>' + htmlArr[4] + '</tr>';
+        html += '<tr><th>人数</th>' + htmlArr[5] + '</tr>';
+        html += "</table>";
+        document.getElementById('area-table').innerHTML = html;
+    }
+
+    function createAccountTable(type, index) {
+        let list = accountDataArr[index].data.list;
+        let html = "<table><tr>";
+        html += '<th>' + accountHeadArr[index] + '</th>'
+        html += '<th style="text-align:right;">人数</th>';
+        html += '<th style="text-align:right;">占比/%</th></tr>';
+
+        for (let i = 0, count = 0; count < 7; i++, count++) {
+            html += '<tr>';
+            let item = list[i];
+            if (item == null) {
+                html += '<td></td><td style="text-align:right;"></td><td style="text-align:right;"></td></tr>';
+                html += '</tr>';
+                continue;
+            }
+
+            html += '<td>' + item['name'] + '</td>';
+            html += '<td style="text-align:right;">' + item['count'] + '</td>';
+            html += '<td style="text-align:right;">' + item['percent'].toFixed(4) + '</td></tr>';
+        }
+        html += "</table>";
+        document.getElementById(accountTableIdArr[index]).innerHTML = html;
+    }
+
+    function drawChart(type, index) {
+        let chart = echarts.init(document.getElementById(accountChartIdArr[index]), 'walden');
+        let options = index < 3 ? pieChartOptions(type, index) : areaChartOptions();
+        chart.setOption(options);
+    }
+
+    let chartTitleArr = ['用户性别分布', '活跃度分布', '粉丝值区间分布', '地域分布'];
+    let legendArr = [['男性', '女性', '保密'], ['无发言', '1~10', '11~100', '101~1000', '>1000'],
+        ['无人关注', '1~10', '11~100', '101~1000', '1001~10000', '10001~10万', '>10万']];
+
+    function areaChartOptions() {
+        let list = accountDataArr[3].data.list;
+
+        let chartData = [];
+        list.forEach(function (item) {
+            chartData.push({
+                name: item['name'],
+                value: item['count']
+            });
+        });
+        return {
+            title: {
+                text: '用户地域分布',
+                x: 'center',
+                top: 30
+            },
+            tooltip: {
+                trigger: 'item'
+            },
+            visualMap: {
+                min: 100000,
+                max: 10000,
+                left: 'left',
+                top: 'middle',
+                text: ['高', '低'],
+                // color:['#0052D4','#6FB1FC'],
+                calculable: true
+            },
+
+            //配置属性
+            series: [{
+                name: '数据',
+                type: 'map',
+                mapType: 'china',
+                label: {
+                    normal: {
+                        show: true  //省份名称
+                    },
+                    emphasis: {
+                        show: false
+                    }
+                },
+                data: chartData  //数据
+            }]
+        };
+    }
+
+    function pieChartOptions(type, index) {
+        let list = accountDataArr[index].data.list;
+
+        let chartData = [];
+        list.forEach(function (item) {
+            chartData.push({
+                name: item['name'],
+                value: item['count']
+            });
+        });
+
+        let legendX = 'left';
+        let legendTop = '30%';
+        switch (index) {
+            case 1:
+                legendX = 'center';
+                legendTop = '60px';
+                break;
+            case 2:
+                legendX = 'right';
+                legendTop = '30%';
+                break;
+            case 0:
+            default:
+                legendX = 'left';
+                legendTop = '30%';
+                break;
+
+        }
+
+        return {
+            title: {
+                text: chartTitleArr[index],
+                x: 'center',
+                top: 20
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: "{a} <br/>{b}: {c} ({d}%)"
+            },
+            legend: {
+                top: legendTop,
+                orient: index === 1 ? 'horizontal' : 'vertical',
+                x: legendX,
+                data: legendArr[index]
+            },
+            series: [
+                {
+                    name: chartTitleArr[index],
+                    type: 'pie',
+                    radius: '60%',
+                    center: ['50%', '60%'],
+                    startAngle: 180,
+                    hoverAnimation: false,
+                    selectedMode: false,
+                    data: chartData
+                }
+            ]
+        };
+    }
 </script>
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

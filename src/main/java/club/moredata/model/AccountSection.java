@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * @author yeluodev1226
  */
-public class AccountSection implements Serializable {
+public class AccountSection implements Serializable, Comparable<AccountSection> {
 
     private static final long serialVersionUID = -7655242468100265449L;
     private String name = "";
@@ -34,5 +34,10 @@ public class AccountSection implements Serializable {
 
     public void setPercent(double percent) {
         this.percent = percent;
+    }
+
+    @Override
+    public int compareTo(AccountSection o) {
+        return getCount() - o.getCount();
     }
 }

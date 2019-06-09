@@ -1,8 +1,8 @@
 package club.moredata.task;
 
 import club.moredata.db.SQLBuilder;
-import club.moredata.model.LeekResult;
 import club.moredata.model.AccountSection;
+import club.moredata.model.LeekResult;
 import club.moredata.util.DBPoolConnection;
 import com.alibaba.fastjson.JSON;
 
@@ -11,14 +11,23 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class AccountTask {
 
+    private static String[] provinces = new String[]{"北京", "天津", "上海", "重庆", "河北", "河南", "云南", "辽宁",
+            "黑龙江", "湖南", "安徽", "山东", "新疆", "江苏", "浙江", "江西", "湖北", "广西", "甘肃", "山西", "内蒙古", "陕西", "吉林", "福建",
+            "贵州", "广东", "青海", "西藏", "四川", "宁夏", "海南", "台湾", "香港", "澳门"};
+    private static int[] numbers = new int[]{159469, 10784, 117347, 15623, 14277, 21499, 6535, 15226, 6717, 20358,
+            18443, 34276, 4755, 58426, 62955, 10982, 29550, 9658, 4724, 7848, 3621, 14615, 4684, 30764, 3453, 163794,
+            784, 818, 31792, 1334, 3977, 1931, 13213, 1168};
+
     public static void main(String[] args) {
         AccountTask task = new AccountTask();
 //        System.out.println(task.countTotalAccount());
-        System.out.println(JSON.toJSONString(task.accountGenderListDealed()));
+//        System.out.println(JSON.toJSONString(task.accountGenderListDealed()));
+        System.out.println(JSON.toJSONString(task.accountAreaListDealed()));
     }
 
     /**
@@ -104,6 +113,7 @@ public class AccountTask {
 
     /**
      * 性别分布
+     * TODO 用户数据变动很小，直接返回处理后的数据，不进行数据库操作
      *
      * @return
      */
@@ -134,13 +144,14 @@ public class AccountTask {
 
     /**
      * 粉丝值区间分布
+     * TODO
      *
      * @return
      */
     public LeekResult<AccountSection> accountFansListDealed() {
         List<AccountSection> genderList = new ArrayList<>();
         AccountSection section1 = new AccountSection();
-        section1.setName("无人关注者");
+        section1.setName("无人关注");
         section1.setCount(5911534);
         section1.setPercent(81.4366);
         AccountSection section2 = new AccountSection();
@@ -148,19 +159,19 @@ public class AccountTask {
         section2.setCount(1164854);
         section2.setPercent(16.0469);
         AccountSection section3 = new AccountSection();
-        section3.setName("10~100");
+        section3.setName("11~100");
         section3.setCount(128151);
         section3.setPercent(1.7654);
         AccountSection section4 = new AccountSection();
-        section4.setName("100~1000");
+        section4.setName("101~1000");
         section4.setCount(38269);
         section4.setPercent(0.5272);
         AccountSection section5 = new AccountSection();
-        section5.setName("1000~10000");
+        section5.setName("1001~10000");
         section5.setCount(11122);
         section5.setPercent(0.1532);
         AccountSection section6 = new AccountSection();
-        section6.setName("10000~10万");
+        section6.setName("10001~10万");
         section6.setCount(5009);
         section6.setPercent(0.0690);
         AccountSection section7 = new AccountSection();
@@ -183,7 +194,8 @@ public class AccountTask {
     }
 
     /**
-     * 粉丝值区间分布
+     * 活跃度区间分布
+     * TODO
      *
      * @return
      */
@@ -196,13 +208,13 @@ public class AccountTask {
         section2.setName("1~10");
         section2.setCount(1630273);
         AccountSection section3 = new AccountSection();
-        section3.setName("10~100");
+        section3.setName("11~100");
         section3.setCount(547036);
         AccountSection section4 = new AccountSection();
-        section4.setName("100~1000");
+        section4.setName("101~1000");
         section4.setCount(114830);
         AccountSection section5 = new AccountSection();
-        section5.setName("1000~10000");
+        section5.setName(">1000");
         section5.setCount(8836);
         genderList.add(section1);
         genderList.add(section2);
@@ -214,6 +226,31 @@ public class AccountTask {
         leekResult.setCount(7259061);
         leekResult.setUpdatedAt("2019-6-6 17:26:50");
         leekResult.setList(genderList);
+        return leekResult;
+    }
+
+    /**
+     * 用户地域分布
+     * TODO
+     *
+     * @return
+     */
+    public LeekResult<AccountSection> accountAreaListDealed() {
+        List<AccountSection> areaList = new ArrayList<>();
+        for (int i=0;i<34;i++){
+            AccountSection section = new AccountSection();
+            section.setName(provinces[i]);
+            section.setCount(numbers[i]);
+            areaList.add(section);
+        }
+
+        Collections.sort(areaList);
+        Collections.reverse(areaList);
+
+        LeekResult<AccountSection> leekResult = new LeekResult<>();
+        leekResult.setCount(7259061);
+        leekResult.setUpdatedAt("2019-6-6 17:26:50");
+        leekResult.setList(areaList);
         return leekResult;
     }
 

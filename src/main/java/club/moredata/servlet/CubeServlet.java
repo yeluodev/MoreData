@@ -3,6 +3,8 @@ package club.moredata.servlet;
 import club.moredata.db.OrderType;
 import club.moredata.entity.Rebalancing;
 import club.moredata.model.LeekResponse;
+import club.moredata.model.LeekResult;
+import club.moredata.model.RebStock;
 import club.moredata.task.AutoTask;
 import club.moredata.util.DateUtil;
 import com.alibaba.fastjson.JSON;
@@ -10,7 +12,6 @@ import com.alibaba.fastjson.serializer.PropertyFilter;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -20,8 +21,8 @@ import java.util.regex.Pattern;
 /**
  * @author yeluodev1226
  */
-@WebServlet(name = "RebalancingServlet", urlPatterns = "/rebalancing")
-public class RebalancingServlet extends HttpServlet {
+@WebServlet(name = "CubeServlet", urlPatterns = "/cube/*")
+public class CubeServlet extends BaseServlet {
 
     private static final long serialVersionUID = 6369933881428115052L;
     private Pattern levelPattern = Pattern.compile("[1-3]");
@@ -35,19 +36,19 @@ public class RebalancingServlet extends HttpServlet {
             "|error_code|error_message|error_message|comment");
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.setCharacterEncoding("utf-8");
-        response.setContentType("text/json;charset=utf-8");
+    public void dealRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         PrintWriter out = response.getWriter();
 
         LeekResponse leekResponse;
-        if(!DateUtil.getInstance().isTradingDay(System.currentTimeMillis())){
-            leekResponse = LeekResponse.errorResponse(LeekResponse.ERROR_OTHER,"A股今日休市，组合不进行跟踪调仓");
+        if (!DateUtil.getInstance().isTradingDay(System.currentTimeMillis()) && false) {
+            leekResponse = LeekResponse.errorResponse(LeekResponse.ERROR_OTHER, "A股今日休市，组合不进行跟踪调仓");
+            out.print(JSON.toJSONString(leekResponse));
+            return;
+        }
+
+        String matchPath = request.getHttpServletMapping().getMatchValue();
+        if(matchPath==null){
+            leekResponse = LeekResponse.errorURLResponse();
             out.print(JSON.toJSONString(leekResponse));
             return;
         }
@@ -96,17 +97,35 @@ public class RebalancingServlet extends HttpServlet {
         int cashInt = Integer.valueOf(cash);
 
         AutoTask autoTask = new AutoTask();
-        Rebalancing rebalancing = autoTask.rebalancingCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
-                cashInt == 0, OrderType.getType(orderType));
-        if (rebalancing == null) {
-            leekResponse = LeekResponse.errorDatabaseResponse();
-        } else {
-            leekResponse = LeekResponse.successResponse(rebalancing);
+        switch (matchPath) {
+            case "rebalancing":
+                Rebalancing rebalancing = autoTask.rebalancingCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
+                        cashInt == 0, OrderType.getType(orderType));
+                if (rebalancing == null) {
+                    leekResponse = LeekResponse.errorDatabaseResponse();
+                } else {
+                    leekResponse = LeekResponse.successResponse(rebalancing);
+                }
+                break;
+            case "track":
+                LeekResult<RebStock> leekResult = autoTask.trackCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
+                        cashInt == 0, OrderType.getType(orderType));
+                if(leekResult==null){
+                    leekResponse = LeekResponse.errorDatabaseResponse();
+                }else {
+                    leekResponse = LeekResponse.successResponse(leekResult);
+                }
+                break;
+            default:
+                leekResponse = LeekResponse.errorURLResponse();
+                break;
         }
 
         PropertyFilter propertyFilter = (object, name, value) -> {
-            boolean ma = paramKeyPattern.matcher(name).matches();
-            return ma;
+            if(matchPath.equals("rebalancing")){
+                return paramKeyPattern.matcher(name).matches();
+            }
+            return true;
         };
         out.print(JSON.toJSONString(leekResponse, propertyFilter));
     }

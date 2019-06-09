@@ -53,7 +53,7 @@ public class DBPoolConnection {
      * @return Properties对象
      */
     private static Properties loadPropertiesFile(String fullFile) {
-//        String webRootPath = "D:\\JavaWorkspace\\MoreData\\src\\main\\resources";
+//        String webRootPath = "H:\\Workspace\\Java\\MoreData\\src\\main\\resources";
         if (null == fullFile || "".equals(fullFile)){
             throw new IllegalArgumentException("Properties file path can not be null" + fullFile);
         }
