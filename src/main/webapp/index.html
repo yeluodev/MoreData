@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <title>更多数据</title>
     <link href="favicon.ico" rel="icon">
-    <!-- Loading Bootstrap -->
     <link href="css/vendor/bootstrap.min.css" rel="stylesheet">
-    <!-- Loading Flat UI Pro -->
     <link href="css/flat-ui.css" rel="stylesheet">
     <style>
         body {
@@ -14,11 +12,6 @@
             margin: 0;
             padding: 0;
             background-color: #F8F8F8;
-        }
-
-        .noborder {
-            border: none;
-            box-shadow: none;
         }
 
         .head {
@@ -125,7 +118,6 @@
 
         tr {
             height: 48px;
-            /*background-color: lightgray;*/
         }
 
         tr th:first-child, tr td:nth-child(1) {
@@ -159,11 +151,6 @@
         .footer {
             margin-right: 24px;
             font-size: 16px;
-        }
-
-        .navbar-brand, .navbar-brand:hover, .navbar-brand:active, .navbar-brand:visited, .navbar-brand:link,
-        .navbar-brand:focus {
-            color: whitesmoke;
         }
 
         a.duration, a.duration:hover, a.duration:active, a.duration:visited, a.duration:link, a.duration:focus {
@@ -203,32 +190,44 @@
         let level = 1;
         let maxPage = 1;
         let totalCount = 0;
+        let rankType = 'followers';
+        let accountRankDataArr = [];
+        let rankPage = 1;
+        let rankMaxPage = 1;
 
         let headKeys = [[],
             ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
             ['序号', '名称', '比重/%', '满仓比重/%'],
             ['序号', '名称', '代码', '调仓比重/%'],
-            ['序号', '名称', '代码', '主理人', '净值', '在榜天数']];
+            ['序号', '名称', '代码', '主理人', '净值', '在榜天数'],
+            ['序号', '昵称', '省份', '简介', '发言数', '关注人数', '关注人数(不含匿名用户)']];
         let paramKeys = [[],
             ['rank', 'stockName', 'stockSymbol', 'segmentName', 'count', 'percentWithCash', 'percent'],
             ['rank', 'segmentName', 'percentWithCash', 'percent'],
             ['rank', 'stockName', 'stockSymbol', 'percent'],
-            ['rank', 'name', 'symbol', 'screenName', 'netValue', 'showDaysCount']];
+            ['rank', 'name', 'symbol', 'screenName', 'netValue', 'showDaysCount'],
+            ['rank', 'screenName', 'province', 'description', 'statusCount', 'followersCount', 'realFans']];
         let selectors = ['a.segment', 'a.dimension'];
         let chartMode = !1;
+        let typeNameArr = ['', 'stock', 'segment', 'rebalancing', 'cube'];
 
         $(function () {
             $('#track-cube').on('click', function () {
                 fetchTrackCube(level);
             });
+            $('#download').on('click', function () {
+                console.log(type);
+                console.log(level);
+                $('#download').attr('href', 'http://118.25.182.189/moredata/download/' + typeNameArr[type] +
+                    '?level=' + level);
+            });
+
             $('#myModal').on('shown.bs.modal', function (event) {
                 console.log(event);
                 let modal = $(this);
-                console.log(modal.find('#track-cube-content'))
                 let data = trackCubeArr[level].data;
                 let list = data.list;
                 let html = '';
-                //TODO 样式待调整
                 list.forEach(function (item) {
                     html += item['stock_name'] + '---' + item['weight'] + '<br/>';
                 });
@@ -239,6 +238,7 @@
 
             $('#data-container').show();
             $('#chart-container').hide();
+            $('#rank-table-container').hide();
 
             //监听数据/图表展示方式的切换
             $('#chart-way').on("click", function () {
@@ -254,12 +254,15 @@
             });
 
             $('#switch-mode').on("click", function () {
+                console.log(chartMode);
                 if (chartMode) {
                     $('#data-container').show();
                     $('#chart-container').hide();
+                    $('#rank-table-container').hide();
                 } else {
                     $('#data-container').hide();
                     $('#chart-container').show();
+                    $('#rank-table-container').hide();
                     accountPathArr.forEach(function (value, index, array) {
                         fetchAccountData(value, index);
                     });
@@ -315,6 +318,55 @@
                     fillChartData(type, level, page);
                 });
             });
+
+            let rankCatIds = ['#rank-fans', '#rank-real-fans', '#rank-status'];
+            rankCatIds.forEach(function (value) {
+                $(value).on('click', function () {
+                    switch (value) {
+                        case '#rank-fans':
+                            rankType = 'followers';
+                            break;
+                        case '#rank-real-fans':
+                            rankType = 'realFans';
+                            break;
+                        case '#rank-status':
+                            rankType = 'status';
+                            break;
+                    }
+                    rankPage = 1;
+                    fillRankTableData(rankType, rankPage);
+                });
+            });
+
+            $('#account-overview').on('click', function () {
+                console.log(chartMode);
+                $("a#account-overview>.bottom-line").removeClass("transparent");
+                $("a#account-rank>.bottom-line").addClass("transparent");
+                $('#switch-mode').show();
+                if (!chartMode) {
+                    $('#data-container').show();
+                    $('#chart-container').hide();
+                    $('#rank-table-container').hide();
+                } else {
+                    $('#data-container').hide();
+                    $('#chart-container').show();
+                    $('#rank-table-container').hide();
+                    accountPathArr.forEach(function (value, index, array) {
+                        fetchAccountData(value, index);
+                    });
+                }
+            });
+            $('#account-rank').on('click', function () {
+                $("a#account-overview>.bottom-line").addClass("transparent");
+                $("a#account-rank>.bottom-line").removeClass("transparent");
+                $('#switch-mode').hide();
+                $('#rank-table-container').show();
+                $('#data-container').hide();
+                $('#chart-container').hide();
+                rankPage = 1;
+                fillRankTableData(rankType, rankPage);
+            });
+
             let durationIds = ['#quarter', '#half-year', '#year'];
             durationIds.forEach(function (value) {
                 $(value).on('click', function () {
@@ -350,6 +402,22 @@
                 }
                 page++;
                 fillChartData(type, level, page);
+            });
+            $('#account-last-page').on('click', function () {
+                if (rankPage === 1) {
+                    alert("已是第一页");
+                    return;
+                }
+                rankPage--;
+                fillRankTableData(rankType, rankPage);
+            });
+            $('#account-next-page').on('click', function () {
+                if (rankPage === rankMaxPage) {
+                    alert("已是最后一页");
+                    return;
+                }
+                rankPage++;
+                fillRankTableData(rankType, rankPage);
             });
 
             fillChartData(type, level, page);
@@ -447,6 +515,90 @@
             }
         }
 
+        /**
+         * 填充表格数据
+         * @param rankType
+         * @param rankPage
+         */
+        function fillRankTableData(rankType, rankPage) {
+            let rankTypeIndex = rankType === 'followers' ? 0 : 1;
+            if (accountRankDataArr[rankTypeIndex] == null) {
+                fetchAccountRank(rankType);
+                return;
+            }
+            this.rankType = rankType;
+            this.rankPage = rankPage;
+
+            let list = accountRankDataArr[rankTypeIndex].data.list;
+            let html = "<table><tr>";
+
+            headKeys[5].forEach(function (value, index, array) {
+                if (index === 2) {
+                    html += '<th style="width: 10%;">' + value + '</th>';
+                } else if (index === 3) {
+                    html += '<th style="width: 20%;">' + value + '</th>';
+                } else {
+                    html += '<th>' + value + '</th>';
+                }
+            });
+            html += '</tr>';
+
+            for (let i = 15 * (rankPage - 1), count = 0; count < 15; i++, count++) {
+                html += '<tr>';
+                let item = list[i];
+                if (item == null) {
+                    headKeys[5].forEach(function (value, index, array) {
+                        if (index === 2) {
+                            html += '<td style="width: 10%;"></td>';
+                        } else if (index === 3) {
+                            html += '<td style="width: 20%;"></td>';
+                        } else {
+                            html += '<td></td>';
+                        }
+                    });
+                    html += '</tr>';
+                    continue;
+                }
+
+
+                paramKeys[5].forEach(function (value, index, array) {
+                    if (index === 1) {
+                        html += '<td><a target="_blank" href="https://xueqiu.com/u/' + item['id'] + '">' + item[value]
+                            + '</a></td>';
+                    } else if (index === 2) {
+                        html += '<td style="width: 10%;">' + item[value] + '</td>';
+                    } else if (index === 3) {
+                        html += '<td style="width: 20%;">' + item[value] + '</td>';
+                    } else {
+                        html += '<td>' + item[value] + '</td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += "</table>";
+            document.getElementById('rank-table').innerHTML = html;
+            rankMaxPage = 34;
+            document.getElementById('account-page').innerHTML = rankPage + "/" + rankMaxPage;
+            document.getElementById('account-size').innerHTML = "共500条数据";
+        }
+
+        /**
+         * 请求接口数据
+         * @param rankType
+         */
+        function fetchAccountRank(rankType) {
+            let ajax = new XMLHttpRequest();
+            ajax.open('get', 'http://118.25.182.189/moredata/account/rank/' + rankType);
+            ajax.send();
+            ajax.onreadystatechange = function () {
+                if (ajax.readyState === 4 && ajax.status === 200) {
+                    let chart = ajax.responseText;
+                    accountRankDataArr[rankType === 'followers' ? 0 : 1] = JSON.parse(chart);
+                    fillRankTableData(rankType, 1);
+                }
+            }
+        }
+
 
         let trackCubeArr = [];
 
@@ -456,14 +608,6 @@
          * @param level
          */
         function fetchTrackCube(level) {
-            if (trackCubeArr[level] != null) {
-                console.log(JSON.stringify(trackCubeArr[level]));
-                $('#track-cube-content').innerText = JSON.stringify(trackCubeArr[level]);
-                $('#track-cube-content').innerHTML = '<h2>测试更改内容</h2>';
-                return;
-            }
-
-
             let ajax = new XMLHttpRequest();
             ajax.open('get', 'http://118.25.182.189/moredata/cube/track?level=' + level);
             ajax.send();
@@ -557,6 +701,9 @@
             <div class="bottom-line transparent"></div>
         </a>
         <div style="flex: 1;"></div>
+        <a id="download" target="_blank" href="#" style="margin: 0 36px;">
+            <b>Excel导出</b>
+        </a>
         <a id="track-cube" href="javascript:void(0);" data-toggle="modal" data-target="#myModal">
             <b>查看跟踪组合</b>
         </a>
@@ -590,24 +737,18 @@
 
 <div class="card" id="account-data-card">
     <div class="flex" style="height: 48px;">
-        <div class="duration" href="javascript:void(0);">雪球网用户数据一览
+        <a class="duration" href="javascript:void(0);" id="account-overview">用户数据一览
             <div class="bottom-line"></div>
-        </div>
+        </a>
+        <a class="duration" href="javascript:void(0);" id="account-rank">用户排行TOP500
+            <div class="bottom-line transparent"></div>
+        </a>
         <a id="switch-mode" href="javascrip:void(0);"><b style="color:#1b1e21;">切换模式</b></a>
         <span style="flex:1;text-align:right;font-size: 14px;">
             数据中存在一些不规范和非法数据，可能是雪球网升级过程中的历史遗留，因此剔除了该类数据。分析基于五月份平台数据
         </span>
     </div>
     <div class="hr"></div>
-    <!--<div class="btn-toolbar">-->
-    <div class="flex" hidden>
-        <div class="btn-group">
-            <a id="name" class="dimension btn  active" href="#fakelink">性别</span></a>
-            <a id="area" class="dimension btn " href="#fakelink">地区</a>
-            <a id="activation" class="dimension btn" href="#fakelink">活跃度</a>
-            <a id="fans" class="dimension btn" href="#fakelink">粉丝值</a>
-        </div>
-    </div>
 
     <div id="data-container" style="width: 100%">
         <div class="flex" style="margin-top: 12px;">
@@ -627,7 +768,6 @@
         <div id="area-table" style="width: 100%;margin: 12px 0;"></div>
     </div>
 
-
     <div id="chart-container" style="width: 100%">
         <div class="flex" style="margin-top: 12px;">
             <div id="gender-chart" style="flex: 1;height:400px;"></div>
@@ -635,6 +775,25 @@
             <div id="fans-chart" style="flex: 1;height:400px;"></div>
         </div>
         <div id="area-chart" style="width: 100%;margin: 12px 0;height:800px;"></div>
+    </div>
+
+    <div id="rank-table-container" style="width: 100%">
+        <div class="flex">
+            <div class="btn-group">
+                <a id="rank-fans" class="dimension btn  active" href="#fakelink">粉丝数</span></a>
+                <a id="rank-real-fans" class="dimension btn " href="#fakelink">粉丝数(不含匿名用户)</a>
+                <a id="rank-status" class="dimension btn " href="#fakelink">发言数</a>
+            </div>
+        </div>
+        <div id="rank-table" style="width: 100%;"></div>
+        <!--<div class="hr"></div>-->
+        <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
+            <div class="footer" id="account-size">共0条数据</div>
+            <a id="account-next-page" class="footer" href="javascript:void(0);">下一页</a>
+            <div class="footer" id="account-page">1/1</div>
+            <a id='account-last-page' class="footer" href="javascript:void(0);">上一页</a>
+
+        </div>
     </div>
 
     <!--<div style="height:600px;">-->

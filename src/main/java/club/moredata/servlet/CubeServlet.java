@@ -40,7 +40,7 @@ public class CubeServlet extends BaseServlet {
         PrintWriter out = response.getWriter();
 
         LeekResponse leekResponse;
-        if (!DateUtil.getInstance().isTradingDay(System.currentTimeMillis()) && false) {
+        if (!DateUtil.getInstance().isTradingDay(System.currentTimeMillis())) {
             leekResponse = LeekResponse.errorResponse(LeekResponse.ERROR_OTHER, "A股今日休市，组合不进行跟踪调仓");
             out.print(JSON.toJSONString(leekResponse));
             return;

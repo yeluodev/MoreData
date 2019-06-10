@@ -11,6 +11,7 @@ import java.io.Serializable;
 public class Account implements Serializable {
 
     private static final long serialVersionUID = -4282228272646300857L;
+    private int rank = 0;
     private boolean subscribeable;
     @SerializedName("common_count")
     private int commonCount;
@@ -73,6 +74,15 @@ public class Account implements Serializable {
     private String namePinyin;
     @SerializedName("screenname_pinyin")
     private String screennamePinyin;
+    private int realFans = 0;
+
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
+    }
 
     public boolean isSubscribeable() {
         return subscribeable;
@@ -400,5 +410,13 @@ public class Account implements Serializable {
 
     public void setScreennamePinyin(String screennamePinyin) {
         this.screennamePinyin = screennamePinyin;
+    }
+
+    public int getRealFans() {
+        return realFans;
+    }
+
+    public void setRealFans(int realFans) {
+        this.realFans = realFans;
     }
 }

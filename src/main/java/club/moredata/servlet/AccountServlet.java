@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.regex.Pattern;
 
 /**
  * @author yeluodev1226
@@ -20,6 +21,9 @@ import java.io.PrintWriter;
 @WebServlet(name = "AccountServlet", urlPatterns = "/account/*")
 public class AccountServlet extends HttpServlet {
     private static final long serialVersionUID = 3846114669112219956L;
+    private Pattern propertyPattern = Pattern.compile("code|message|data|list|count|updatedAt|rank|id|followersCount" +
+            "|screenName|stocksCount" +
+            "|photoDomain|profileImageUrl|statusCount|description|province|gender|realFans");
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -34,31 +38,43 @@ public class AccountServlet extends HttpServlet {
 
         String matchPath = request.getHttpServletMapping().getMatchValue();
         AccountTask task = new AccountTask();
-        LeekResult leekResult;
+        LeekResult leekResult = null;
         LeekResponse leekResponse;
+        PropertyFilter propertyFilter = (object, name, value) -> !"cash".equals(name);
         switch (matchPath) {
             case "gender":
                 leekResult = task.accountGenderListDealed();
-                leekResponse = LeekResponse.generateResponse(leekResult);
                 break;
             case "area":
                 leekResult = task.accountAreaListDealed();
-                leekResponse = LeekResponse.generateResponse(leekResult);
                 break;
             case "activation":
                 leekResult = task.accountActivationListDealed();
-                leekResponse = LeekResponse.generateResponse(leekResult);
                 break;
             case "fans":
                 leekResult = task.accountFansListDealed();
-                leekResponse = LeekResponse.generateResponse(leekResult);
+                break;
+            case "rank/followers":
+                leekResult = task.accountRankList(1);
+                propertyFilter = (object, name, value) -> propertyPattern.matcher(name).matches();
+                break;
+            case "rank/realFans":
+                leekResult = task.accountRankList(2);
+                propertyFilter = (object, name, value) -> propertyPattern.matcher(name).matches();
+                break;
+            case "rank/status":
+                leekResult = task.accountRankList(3);
+                propertyFilter = (object, name, value) -> propertyPattern.matcher(name).matches();
                 break;
             default:
-                leekResponse = LeekResponse.errorURLResponse();
                 break;
         }
+        if(leekResult!=null){
+            leekResponse = LeekResponse.generateResponse(leekResult);
+        }else {
+            leekResponse = LeekResponse.errorURLResponse();
+        }
 
-        PropertyFilter propertyFilter = (object, name, value) -> !"cash".equals(name);
         out.print(JSON.toJSONString(leekResponse, propertyFilter));
     }
 }

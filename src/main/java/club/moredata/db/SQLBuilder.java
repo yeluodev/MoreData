@@ -210,7 +210,7 @@ public class SQLBuilder {
         String idCondition = getIdCondition(beforeId);
         String orderCondition = getOrderCondition(orderType);
 
-        return String.format(sql, idCondition,stockIdCondition, orderCondition);
+        return String.format(sql, idCondition, stockIdCondition, orderCondition);
     }
 
     /**
@@ -321,6 +321,7 @@ public class SQLBuilder {
 
     /**
      * 比重前三个股
+     *
      * @return
      */
     public static String buildStockTop3Query() {
@@ -394,6 +395,7 @@ public class SQLBuilder {
 
     /**
      * 查询是否是节假日
+     *
      * @return
      */
     public static String buildHolidayQuery() {
@@ -402,6 +404,7 @@ public class SQLBuilder {
 
     /**
      * 统计账号总数
+     *
      * @return
      */
     public static String buildAccountQuery() {
@@ -410,9 +413,10 @@ public class SQLBuilder {
 
     /**
      * 统计账号性别
+     *
      * @return
      */
-    public static String buildAccountGenderQuery(){
+    public static String buildAccountGenderQuery() {
         return "SELECT `gender`,COUNT(*) AS `count`,ROUND(COUNT(*)*100/(SELECT COUNT(*) FROM `user`),4) AS `percent`" +
                 " FROM " +
                 "`user` " +
@@ -421,6 +425,7 @@ public class SQLBuilder {
 
     /**
      * 账号粉丝值区间分布
+     *
      * @return
      */
     public static String buildAccountFansQuery() {
@@ -430,10 +435,38 @@ public class SQLBuilder {
 
     /**
      * 账号活跃度区间分布
+     *
      * @return
      */
     public static String buildAccountStatusCountQuery() {
         return "SELECT INTERVAL (`status_count`,1,10,100,1000) AS `section` ,COUNT(*) FROM `user` " +
                 "GROUP BY `section`;";
+    }
+
+    /**
+     * 用户排行--粉丝数（含匿名用户即非注册用户）
+     * @return
+     */
+    public static String buildAccountRankQuery() {
+        return "SELECT *,(`followers` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `followers` DESC LIMIT" +
+                " 500;";
+    }
+
+    /**
+     * 用户排行--非匿名粉丝数量
+     * @return
+     */
+    public static String buildAccountRealFansRankQuery() {
+        return "SELECT *,(`followers` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `realFans` DESC LIMIT " +
+                "500;";
+    }
+
+    /**
+     * 用户排行--发言数
+     * @return
+     */
+    public static String buildAccountStatusRankQuery() {
+        return "SELECT *,(`followers` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `status_count` DESC " +
+                "LIMIT 500;";
     }
 }

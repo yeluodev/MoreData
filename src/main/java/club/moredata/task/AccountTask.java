@@ -1,10 +1,12 @@
 package club.moredata.task;
 
 import club.moredata.db.SQLBuilder;
+import club.moredata.entity.Account;
 import club.moredata.model.AccountSection;
 import club.moredata.model.LeekResult;
 import club.moredata.util.DBPoolConnection;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.PropertyFilter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,7 +15,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
+/**
+ * @author yeluodev1226
+ */
 public class AccountTask {
 
     private static String[] provinces = new String[]{"北京", "天津", "上海", "重庆", "河北", "河南", "云南", "辽宁",
@@ -22,13 +28,6 @@ public class AccountTask {
     private static int[] numbers = new int[]{159469, 10784, 117347, 15623, 14277, 21499, 6535, 15226, 6717, 20358,
             18443, 34276, 4755, 58426, 62955, 10982, 29550, 9658, 4724, 7848, 3621, 14615, 4684, 30764, 3453, 163794,
             784, 818, 31792, 1334, 3977, 1931, 13213, 1168};
-
-    public static void main(String[] args) {
-        AccountTask task = new AccountTask();
-//        System.out.println(task.countTotalAccount());
-//        System.out.println(JSON.toJSONString(task.accountGenderListDealed()));
-        System.out.println(JSON.toJSONString(task.accountAreaListDealed()));
-    }
 
     /**
      * 查询雪球网账户总数
@@ -237,7 +236,7 @@ public class AccountTask {
      */
     public LeekResult<AccountSection> accountAreaListDealed() {
         List<AccountSection> areaList = new ArrayList<>();
-        for (int i=0;i<34;i++){
+        for (int i = 0; i < 34; i++) {
             AccountSection section = new AccountSection();
             section.setName(provinces[i]);
             section.setCount(numbers[i]);
@@ -252,6 +251,82 @@ public class AccountTask {
         leekResult.setUpdatedAt("2019-6-6 17:26:50");
         leekResult.setList(areaList);
         return leekResult;
+    }
+
+    /**
+     * 用户排行
+     * TODO type=2/3时，sql语句查询时间较长，未加索引
+     * @param type 1/2/3
+     * @return
+     */
+    public LeekResult<Account> accountRankList(int type) {
+        Connection connection = null;
+        List<Account> accountList = new ArrayList<>();
+        LeekResult<Account> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            String sql;
+            if(type==1){
+                sql = SQLBuilder.buildAccountRankQuery();
+            }else if(type==2){
+                sql = SQLBuilder.buildAccountRealFansRankQuery();
+            }else {
+                sql = SQLBuilder.buildAccountStatusRankQuery();
+            }
+
+            PreparedStatement queryPs = connection.prepareStatement(sql);
+            ResultSet resultSet = queryPs.executeQuery();
+            int rank = 0;
+            while (resultSet.next()) {
+                rank++;
+                Account account = new Account();
+                account.setRank(rank);
+                account.setId(resultSet.getLong(1));
+                account.setFollowersCount(resultSet.getInt(2));
+                account.setScreenName(resultSet.getString(3));
+                account.setFriendsCount(resultSet.getInt(4));
+                account.setStocksCount(resultSet.getInt(7));
+                account.setPhotoDomain(resultSet.getString(8));
+                account.setProfileImageUrl(resultSet.getString(9));
+                account.setStatusCount(resultSet.getInt(12));
+                account.setDescription(resultSet.getString(14));
+                account.setProvince(resultSet.getString(15));
+                account.setGender(resultSet.getString(17));
+                account.setRealFans(resultSet.getInt(22));
+                accountList.add(account);
+            }
+
+            leekResult = new LeekResult<>();
+            leekResult.setCount(500);
+            leekResult.setUpdatedAt("2019-6-6 17:26:50");
+            leekResult.setList(accountList);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return leekResult;
+    }
+
+    private static Pattern propertyPattern = Pattern.compile("list|count|updatedAt|id" +
+            "|followersCount" +
+            "|screenName|stocksCount|photoDomain" +
+            "|profileImageUrl|statusCount|description|province|gender|realFans");
+
+    public static void main(String[] args) {
+        AccountTask task = new AccountTask();
+//        System.out.println(task.countTotalAccount());
+//        System.out.println(JSON.toJSONString(task.accountGenderListDealed()));
+//        System.out.println(JSON.toJSONString(task.accountAreaListDealed()));
+        PropertyFilter propertyFilter = (object, name, value) -> propertyPattern.matcher(name).matches();
+        System.out.println(JSON.toJSONString(task.accountRankList(3), propertyFilter));
     }
 
 }

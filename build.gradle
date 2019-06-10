@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.eclipse.ecf:org.apache.log4j:1.2.15.v201012070815'
     implementation 'com.alibaba:druid:1.1.16'
     implementation 'net.coobird:thumbnailator:0.4.8'
+    implementation 'org.apache.poi:poi:4.1.0'
 
     implementation 'org.slf4j:slf4j-nop:1.7.26'
 }
