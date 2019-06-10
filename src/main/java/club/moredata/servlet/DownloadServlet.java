@@ -26,6 +26,7 @@ public class DownloadServlet extends BaseServlet {
     private static final long serialVersionUID = 6286626351893740410L;
         public static final String EXCEL_FILE_PATH = "/var/local/club.moredata/excel/";
 //    public static final String EXCEL_FILE_PATH = "D:/excel/";
+//    public static final String EXCEL_FILE_PATH = "H:/excel/";
     private Pattern levelPattern = Pattern.compile("[1-3]");
 
     private String[] stockHeadArr = new String[]{"序号", "名称", "代码", "所属板块", "持有组合数", "比重/%", "满仓比重/%",};
@@ -82,39 +83,39 @@ public class DownloadServlet extends BaseServlet {
             case "segment":
                 leekResult = task.segmentRankList(levelInt, 100, OrderType.WEIGHT_DESC);
                 header = Arrays.asList(segmentHeadArr);
-                for (AlsSegment stock : (List<AlsSegment>) leekResult.getList()) {
+                for (AlsSegment alsSegment : (List<AlsSegment>) leekResult.getList()) {
                     List<String> rowBody = new ArrayList<>();
-                    rowBody.add(String.valueOf(stock.getRank()));
-                    rowBody.add(String.valueOf(stock.getSegmentName()));
-                    rowBody.add(String.valueOf(stock.getPercentWithCash()));
-                    rowBody.add(String.valueOf(stock.getPercent()));
+                    rowBody.add(String.valueOf(alsSegment.getRank()));
+                    rowBody.add(String.valueOf(alsSegment.getSegmentName()));
+                    rowBody.add(String.valueOf(alsSegment.getPercentWithCash()));
+                    rowBody.add(String.valueOf(alsSegment.getPercent()));
                     body.add(rowBody);
                 }
                 break;
             case "rebalancing":
                 leekResult = task.rebalancingRankList(levelInt, 100, 3000,
-                        OrderType.WEIGHT_DESC, RebalancingType.ALL);
+                        OrderType.CHANGE_WEIGHT_DESC, RebalancingType.ALL);
                 header = Arrays.asList(rebalancingHeadArr);
-                for (AlsRebalancing stock : (List<AlsRebalancing>) leekResult.getList()) {
+                for (AlsRebalancing alsRebalancing : (List<AlsRebalancing>) leekResult.getList()) {
                     List<String> rowBody = new ArrayList<>();
-                    rowBody.add(String.valueOf(stock.getRank()));
-                    rowBody.add(String.valueOf(stock.getStockName()));
-                    rowBody.add(String.valueOf(stock.getStockSymbol()));
-                    rowBody.add(String.valueOf(stock.getPercent()));
+                    rowBody.add(String.valueOf(alsRebalancing.getRank()));
+                    rowBody.add(String.valueOf(alsRebalancing.getStockName()));
+                    rowBody.add(String.valueOf(alsRebalancing.getStockSymbol()));
+                    rowBody.add(String.valueOf(alsRebalancing.getPercent()));
                     body.add(rowBody);
                 }
                 break;
             case "cube":
                 leekResult = task.cubeRankList(levelInt, Integer.MAX_VALUE);
                 header = Arrays.asList(cubeHeadArr);
-                for (AlsCube stock : (List<AlsCube>) leekResult.getList()) {
+                for (AlsCube alsCube : (List<AlsCube>) leekResult.getList()) {
                     List<String> rowBody = new ArrayList<>();
-                    rowBody.add(String.valueOf(stock.getRank()));
-                    rowBody.add(String.valueOf(stock.getName()));
-                    rowBody.add(String.valueOf(stock.getSymbol()));
-                    rowBody.add(String.valueOf(stock.getScreenName()));
-                    rowBody.add(String.valueOf(stock.getNetValue()));
-                    rowBody.add(String.valueOf(stock.getShowDaysCount()));
+                    rowBody.add(String.valueOf(alsCube.getRank()));
+                    rowBody.add(String.valueOf(alsCube.getName()));
+                    rowBody.add(String.valueOf(alsCube.getSymbol()));
+                    rowBody.add(String.valueOf(alsCube.getScreenName()));
+                    rowBody.add(String.valueOf(alsCube.getNetValue()));
+                    rowBody.add(String.valueOf(alsCube.getShowDaysCount()));
                     body.add(rowBody);
                 }
                 break;

@@ -1,7 +1,10 @@
 package club.moredata.servlet;
 
+import club.moredata.api.ApiManager;
 import club.moredata.db.OrderType;
+import club.moredata.entity.Cube;
 import club.moredata.entity.Rebalancing;
+import club.moredata.entity.SearchResult;
 import club.moredata.model.LeekResponse;
 import club.moredata.model.LeekResult;
 import club.moredata.model.RebStock;
@@ -59,6 +62,7 @@ public class CubeServlet extends BaseServlet {
         String suspension = request.getParameter("suspension");
         String cash = request.getParameter("cash");
         String orderType = request.getParameter("order");
+        String key = request.getParameter("key");
 
         if (level == null) {
             level = "1";
@@ -77,6 +81,9 @@ public class CubeServlet extends BaseServlet {
         }
         if (orderType == null) {
             orderType = "1";
+        }
+        if (key == null) {
+            key = "";
         }
 
         if (!levelPattern.matcher(level).matches()
@@ -114,6 +121,14 @@ public class CubeServlet extends BaseServlet {
                     leekResponse = LeekResponse.errorDatabaseResponse();
                 }else {
                     leekResponse = LeekResponse.successResponse(leekResult);
+                }
+                break;
+            case "search":
+                SearchResult<Cube> searchResult = ApiManager.getInstance().searchCube(key);
+                if(searchResult==null){
+                    leekResponse = LeekResponse.errorOtherResponse();
+                }else {
+                    leekResponse = LeekResponse.successResponse(searchResult);
                 }
                 break;
             default:

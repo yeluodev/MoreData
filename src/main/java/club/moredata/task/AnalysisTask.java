@@ -37,7 +37,9 @@ public class AnalysisTask {
 //        task.getCompleteBeforeId(1, 20);
 
 //        task.getSuspensionIds(1, 20, 1000, task.getCompleteBeforeId(1, 20));
-        LeekResult<AlsStock> leekResult = task.stockRankList(1, 100, 3000, false, OrderType.WEIGHT_DESC);
+//        LeekResult<AlsStock> leekResult = task.stockRankList(1, 100, 3000, false, OrderType.WEIGHT_DESC);
+        LeekResult leekResult = task.rebalancingRankList(1, 100, 3000,
+                OrderType.CHANGE_WEIGHT_DESC, RebalancingType.ALL);
 
         System.out.println(JSON.toJSONString(leekResult));
 //        LeekResult<AlsSegment> leekResult = task.segmentRankList(1, 20, OrderType.WEIGHT_DESC);

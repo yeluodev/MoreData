@@ -1,5 +1,9 @@
 package club.moredata.api;
 
+import club.moredata.entity.Cube;
+import club.moredata.entity.SearchResult;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import okhttp3.*;
 
 import java.io.File;
@@ -22,6 +26,7 @@ public class ApiManager {
     private static String STATUSES_UPDATE = ROOT_HOST + "/statuses/update.json";
     private static String PHOTO_UPLOAD = ROOT_HOST + "/photo/upload.json";
     private static String CUBES_REBALANCING_CREATE = ROOT_HOST + "/cubes/rebalancing/create.json";
+    private static String CUBES_SEARCH = ROOT_HOST + "/cube/search.json";
 
     private static ApiManager instance;
     private OkHttpClient client;
@@ -232,9 +237,51 @@ public class ApiManager {
         return null;
     }
 
+    /**
+     * 搜索雪球组合
+     * @param key
+     * @return
+     */
+    public SearchResult<Cube> searchCube(String key){
+        String params = String.format("?count=20&q=%s", key);
+        Request request = new Request.Builder()
+                .url(CUBES_SEARCH + params)
+                .build();
+        SearchResult<Cube> searchResult = null;
+        try {
+            Response response = client.newCall(request).execute();
+            if(response.code()>=200 && response.code()<300){
+                try {
+                    String res = response.body().string();
+                    System.out.println(res);
+                    Gson gson = new Gson();
+                    searchResult = gson.fromJson(res,new TypeToken<SearchResult<Cube>>() {}.getType());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return searchResult;
+    }
+
 
     public static void main(String[] args) {
 //        getInstance().cubeRankList(1);
+//        Response response = getInstance().searchCube("1738676");
+//        if(response.code()>=200 && response.code()<300){
+//            try {
+//                String res = response.body().string();
+//                System.out.println(res);
+//                Gson gson = new Gson();
+//                SearchResult<Cube> searchResult = gson.fromJson(res,new TypeToken<SearchResult<Cube>>() {
+//                }.getType());
+//                System.out.println(searchResult.getQ());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 
 }

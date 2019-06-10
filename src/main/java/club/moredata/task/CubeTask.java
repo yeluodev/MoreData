@@ -409,4 +409,13 @@ public class CubeTask {
         }
     }
 
+    /**
+     * 搜索雪球组合
+     *
+     * @param key 关键词
+     */
+    public void searchCube(String key){
+
+    }
+
 }

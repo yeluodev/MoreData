@@ -176,6 +176,38 @@
             background: rgba(0, 0, 0, 0.6);
         }
 
+        .bdSug_wpr {
+            position: absolute;
+            z-index: 99999;
+            top: 48px;
+            right: 48px;
+            background-color: rgba(52, 73, 94, 0.95);
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+        }
+
+        ul{
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            padding: 0;
+        }
+
+        ul li {
+            list-style: none;
+            padding: 0 24px;
+            height: 48px;
+            line-height:48px;
+            background-color: transparent;
+            color: whitesmoke;
+        }
+
+        ul li.active {
+            background-color: #F8F8F8;
+            color: #1b1e21;
+        }
+
     </style>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -212,6 +244,46 @@
         let typeNameArr = ['', 'stock', 'segment', 'rebalancing', 'cube'];
 
         $(function () {
+            let top = $('nav')[0].height;
+            let width = $('.navbar-form').width();
+            let left = $('.navbar-form').offset().left;
+            console.log(top + '--' + width + '--' + left);
+            $("#autoSearch").css('top', top);
+            $("#autoSearch").css('width', width);
+            $("#autoSearch").css('left', left);
+            $('#navbarInput-01').on('keyup', function () {
+                let key = $('#navbarInput-01').val();
+
+                $('#showResult').empty();
+                if (key === "") {    　　　　　　　　  //无输入
+                    $("#autoSearch").css('display', 'none');    //隐藏列表框
+                    return;
+                }
+                console.log(key);
+                $.ajax({
+                    url: "http://localhost:8080/cube/search?key=" + key,
+                    success: function (data) {
+                        console.log(data);
+                        $("#showResult").empty();
+                        let cubeList = data.data.list;
+                        cubeList.forEach(function (item) {
+                            //生成列表元素,并添加鼠标悬浮事件(高亮):hover
+                            //TODO 样式真尼玛难调
+                            var $li = $("<li onclick='getChoose(this)' style='width: " + width + "px;'>" + item.name + "</li>").hover(function () {
+                                $("li").removeClass("active");　　　　　//bootstrap　　　
+                                $(this).addClass("active");
+                            });
+
+                            $("#showResult").append($li);   　//添加列表
+                            $("#autoSearch").show();　　　　　 //显示列表框
+                            $("#autoSearch").css('display', 'block');
+
+                        });
+                    }
+                })
+            });
+
+
             $('#track-cube').on('click', function () {
                 fetchTrackCube(level);
             });
@@ -220,6 +292,8 @@
                 console.log(level);
                 $('#download').attr('href', 'http://118.25.182.189/moredata/download/' + typeNameArr[type] +
                     '?level=' + level);
+                // $('#download').attr('href', 'http://localhost:8080/download/' + typeNameArr[type] +
+                //     '?level=' + level);
             });
 
             $('#myModal').on('shown.bs.modal', function (event) {
@@ -422,6 +496,11 @@
 
             fillChartData(type, level, page);
         });
+
+        function getChoose(data) {
+            $("#navbarInput-01").val($(data).text());
+            $("#autoSearch").hide();
+        }
 
         /**
          * 填充表格数据
@@ -660,6 +739,9 @@
             <li><a href="#fakelink">关于</a></li>
         </ul>
         <form class="navbar-form form-inline my-2 my-lg-0" action="#" role="search">
+            <div id='autoSearch' class="bdSug_wpr" style="height:auto;display: none;">
+                <ul id='showResult' style="background: rgba(52, 73, 94, 0.95);"></ul>
+            </div>
             <div class="form-group">
                 <div class="input-group">
                     <input class="form-control" id="navbarInput-01" type="search" placeholder="Search">
