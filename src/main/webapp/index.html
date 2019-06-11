@@ -12,6 +12,12 @@
             margin: 0;
             padding: 0;
             background-color: #F8F8F8;
+            opacity: 0;
+            transition: opacity 0.2s
+        }
+
+        body.bactive {
+            opacity: 1
         }
 
         .head {
@@ -44,6 +50,7 @@
         }
 
         .float-bar {
+            z-index: 1000;
             height: 72px;
             width: calc(100% - 72px);
             margin: -36px 36px 16px 36px;
@@ -187,7 +194,7 @@
             border-radius: 4px;
         }
 
-        ul{
+        ul {
             -webkit-border-radius: 4px;
             -moz-border-radius: 4px;
             border-radius: 4px;
@@ -198,7 +205,7 @@
             list-style: none;
             padding: 0 24px;
             height: 48px;
-            line-height:48px;
+            line-height: 48px;
             background-color: transparent;
             color: whitesmoke;
         }
@@ -206,6 +213,11 @@
         ul li.active {
             background-color: #F8F8F8;
             color: #1b1e21;
+        }
+
+        iframe {
+            border: none;
+            margin: 0;
         }
 
     </style>
@@ -226,6 +238,7 @@
         let accountRankDataArr = [];
         let rankPage = 1;
         let rankMaxPage = 1;
+        let searchReq;
 
         let headKeys = [[],
             ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
@@ -243,45 +256,72 @@
         let chartMode = !1;
         let typeNameArr = ['', 'stock', 'segment', 'rebalancing', 'cube'];
 
-        $(function () {
-            let top = $('nav')[0].height;
-            let width = $('.navbar-form').width();
-            let left = $('.navbar-form').offset().left;
-            console.log(top + '--' + width + '--' + left);
-            $("#autoSearch").css('top', top);
-            $("#autoSearch").css('width', width);
-            $("#autoSearch").css('left', left);
-            $('#navbarInput-01').on('keyup', function () {
-                let key = $('#navbarInput-01').val();
-
-                $('#showResult').empty();
-                if (key === "") {    　　　　　　　　  //无输入
-                    $("#autoSearch").css('display', 'none');    //隐藏列表框
-                    return;
+        function setIframeHeight(iframe) {
+            if (iframe) {
+                var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
+                console.log('height=' + iframe.height);
+                if (iframeWin.document.body) {
+                    console.log('height=' + iframe.height);
+                    iframe.height = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
                 }
-                console.log(key);
-                $.ajax({
-                    url: "http://localhost:8080/cube/search?key=" + key,
-                    success: function (data) {
-                        console.log(data);
-                        $("#showResult").empty();
-                        let cubeList = data.data.list;
-                        cubeList.forEach(function (item) {
-                            //生成列表元素,并添加鼠标悬浮事件(高亮):hover
-                            //TODO 样式真尼玛难调
-                            var $li = $("<li onclick='getChoose(this)' style='width: " + width + "px;'>" + item.name + "</li>").hover(function () {
-                                $("li").removeClass("active");　　　　　//bootstrap　　　
-                                $(this).addClass("active");
-                            });
+                console.log('height=' + iframe.height);
+            }
+        };
 
-                            $("#showResult").append($li);   　//添加列表
-                            $("#autoSearch").show();　　　　　 //显示列表框
-                            $("#autoSearch").css('display', 'block');
+        $(function () {
+            $('body').addClass('bactive');
 
-                        });
-                    }
-                })
-            });
+            let iframe = document.getElementById('iframe');
+            iframe.onload = function () {
+                this.style.visibility = 'hidden';
+                this.setAttribute('height', 'auto');
+                setTimeout(function () {
+                    iframe.setAttribute('height', iframe.contentWindow.document.body.scrollHeight);
+                    iframe.style.visibility = 'visible';
+                }, 0);
+            };
+
+            // let top = $('nav')[0].height;
+            // let width = $('.navbar-form').width();
+            // let left = $('.navbar-form').offset().left;
+            // console.log(top + '--' + width + '--' + left);
+            // $("#autoSearch").css('top', top);
+            // $("#autoSearch").css('width', width);
+            // $("#autoSearch").css('left', left);
+            // $('#navbarInput-01').on('keyup', function () {
+            //     let key = $('#navbarInput-01').val();
+            //     console.log(key);
+            //     if(searchReq!=null){
+            //         searchReq.abort();
+            //     }
+            //     if (key === "") {    　　　　　　　　  //无输入
+            //         $("#autoSearch").css('display', 'none');    //隐藏列表框
+            //         return;
+            //     }
+            //
+            //     searchReq = $.ajax({
+            //         url: "http://localhost:8080/cube/search?key=" + key,
+            //         success: function (data) {
+            //             console.log(data);
+            //             $("#showResult").empty();
+            //             let cubeList = data.data.list;
+            //             cubeList.forEach(function (item) {
+            //                 //生成列表元素,并添加鼠标悬浮事件(高亮):hover
+            //                 //TODO 样式真尼玛难调
+            //                 var $li = $("<li onclick='getChoose(this)' style='width: " + width + "px;'>" + item.name + "</li>").hover(function () {
+            //                     $("li").removeClass("active");　　　　　//bootstrap　　　
+            //                     $(this).addClass("active");
+            //                 });
+            //
+            //                 $("#showResult").append($li);   　//添加列表
+            //                 $("#autoSearch").show();　　　　　 //显示列表框
+            //                 $("#autoSearch").css('display', 'block');
+            //
+            //             });
+            //         }
+            //     });
+            //
+            // });
 
 
             $('#track-cube').on('click', function () {
@@ -498,7 +538,8 @@
         });
 
         function getChoose(data) {
-            $("#navbarInput-01").val($(data).text());
+            console.log('index.html--getChoose');
+            $('iframe').contents().find("#navbarInput-01").val($(data).text());
             $("#autoSearch").hide();
         }
 
@@ -700,7 +741,7 @@
 
     </script>
 </head>
-<body>
+<body style="position:relative;z-index:10;">
 <!-- 模态框（Modal） -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -727,44 +768,14 @@
         </div><!-- /.modal-content -->
     </div><!-- /.modal -->
 </div>
-
-<nav class="navbar navbar-inverse navbar-embossed navbar-expand-lg head" role="navigation">
-    <!--<div class="navbar-brand">更多数据</div>-->
-    <img src="moredata.png" style="width:125px;height:40px;"/>
-    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse-01"></button>
-    <div class="collapse navbar-collapse" id="navbar-collapse-01" style="border: none;box-shadow: none;">
-        <ul class="nav navbar-nav mr-auto">
-            <li><a id="data-way" href="#fakelink">数据</a></li>
-            <li><a id="chart-way" href="#fakelink">图表</a></li>
-            <li><a href="#fakelink">关于</a></li>
-        </ul>
-        <form class="navbar-form form-inline my-2 my-lg-0" action="#" role="search">
-            <div id='autoSearch' class="bdSug_wpr" style="height:auto;display: none;">
-                <ul id='showResult' style="background: rgba(52, 73, 94, 0.95);"></ul>
-            </div>
-            <div class="form-group">
-                <div class="input-group">
-                    <input class="form-control" id="navbarInput-01" type="search" placeholder="Search">
-                    <span class="input-group-btn">
-                      <button type="submit" class="btn"><span class="fui-search"></span></button>
-                    </span>
-                </div>
-            </div>
-        </form>
-    </div><!-- /.navbar-collapse -->
-</nav><!-- /navbar -->
-<div class="sub-head flex">
-    <span class="description" style="margin-left: 36px;">
-        每日风云榜跟踪，及时追踪雪球组合风云榜三大榜单TOP100<br/>
-        筛选持仓比重、组合持仓、板块比重等数据，生成相应组合<br/>
-        股市有风险，入市需谨慎</span>
-
-    <div style="flex:1;"></div>
-    <div class="description flex" style="padding-bottom:12px;margin-top: 36px;margin-right: 36px;">
-        页面数据来自<img src="xueqiu-logotype-透明底白字.png" style="width: 100px;height: 40px;">仅供参考
-    </div>
+<div id='autoSearch' class="bdSug_wpr" style="height:auto;display: none;position:absolute;z-index:110;">
+    <ul id='showResult' style="background: rgba(52, 73, 94, 0.95);"></ul>
 </div>
-<div class="float-bar flex">
+
+<iframe scrolling="no" src="common/head.html" width="100%" id="iframe" style="position:relative;z-index:100;">
+</iframe>
+
+<div class="float-bar flex" style="position:relative;z-index:100;">
     <h6 style="margin-right: 24px;">快速通道</h6>
     <div class="quicktask">个股</div>
     <div class="quicktask">板块</div>

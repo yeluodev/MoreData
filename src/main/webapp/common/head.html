@@ -1,0 +1,222 @@
+<html lang="en">
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>更多数据</title>
+    <link href="../favicon.ico" rel="icon">
+    <link href="../css/vendor/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/flat-ui.css" rel="stylesheet">
+    <style>
+        body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #F8F8F8;
+        }
+
+        .head {
+            padding: 0 32px;
+            border-radius: 0;
+            margin-bottom: 0;
+        }
+
+        .flex {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        h6 {
+            margin: auto 32px auto 0;
+        }
+
+        .sub-head {
+            width: 100%;
+            background-color: rgba(52, 73, 94, 0.95);
+            padding-bottom: 36px;
+        }
+
+        .description {
+            color: whitesmoke;
+            font-size: 16px;
+            padding: 24px 36px;
+            line-height: 28px;
+        }
+
+
+        .active {
+            color: white;
+            background-color: rgba(52, 73, 94, 0.95);
+        }
+
+        tr {
+            height: 48px;
+        }
+
+        tr th:first-child, tr td:nth-child(1) {
+            width: 8%;
+            padding: 0 48px 0 24px;
+            text-align: right;
+        }
+
+        tr th:nth-child(n+2):nth-child(-n+4), tr td:nth-child(n+2):nth-child(-n+4) {
+            width: 16%;
+            padding: 0 48px 0 24px;
+            text-align: left;
+        }
+
+        tr th:nth-child(n+5), tr td:nth-child(n+5) {
+            width: 15%;
+            padding: 0 48px 0 24px;
+            text-align: right;
+        }
+
+        /*设置奇数行颜色*/
+        table tr:nth-child(odd) {
+            background: #EEEEEE;
+        }
+
+        /*设置偶数行颜色*/
+        table tr:nth-child(even) {
+            background: #F8F8F8;
+        }
+
+        table {
+            margin-top: 0;
+            width: 100%;
+        }
+
+        tr {
+            width: 100%;
+        }
+
+        #area-table > table > tbody > tr > td {
+            width: 0;
+            margin: 0 16px;
+            text-align: right;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        ul{
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            padding: 0;
+        }
+
+        ul li {
+            list-style: none;
+            padding: 0 24px;
+            height: 48px;
+            line-height:48px;
+            background-color: transparent;
+            color: whitesmoke;
+        }
+
+        ul li.active {
+            background-color: #F8F8F8;
+            color: #1b1e21;
+        }
+
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script>
+        let searchReq;
+
+        $(function () {
+            let top = $('nav')[0].height;
+            let width = $('.navbar-form').width();
+            let left = $('.navbar-form').offset().left;
+            console.log(top + '--' + width + '--' + left);
+            $("#autoSearch",parent.document).css('top', top);
+            $("#autoSearch",parent.document).css('width', width);
+            $("#autoSearch",parent.document).css('left', left);
+            $('#navbarInput-01').on('keyup', function () {
+                let key = $('#navbarInput-01').val();
+                console.log(key);
+                if (searchReq != null) {
+                    searchReq.abort();
+                }
+                if (key === "") {    　　　　　　　　  //无输入
+                    $("#autoSearch",parent.document).css('display', 'none');    //隐藏列表框
+                    return;
+                }
+
+                searchReq = $.ajax({
+                    url: "http://localhost:8080/cube/search?key=" + key,
+                    success: function (data) {
+                        console.log(data);
+                        $("#showResult",parent.document).empty();
+                        let cubeList = data.data.list;
+                        cubeList.forEach(function (item) {
+                            //生成列表元素,并添加鼠标悬浮事件(高亮):hover
+                            //TODO 样式真尼玛难调
+                            var $li = $("<li onclick='getChoose(this)' style='width: " + width + "px;'>" + item.name + "</li>").hover(function () {
+                                $("li",parent.document).removeClass("active");　　　　　//bootstrap　　　
+                                $(this).addClass("active");
+                            });
+
+                            $("#showResult",parent.document).append($li);   　//添加列表
+                            $("#autoSearch",parent.document).show();　　　　　 //显示列表框
+                            $("#autoSearch",parent.document).css('display', 'block');
+
+                        });
+                    }
+                });
+
+            });
+
+        });
+
+        function getChoose(data) {
+            console.log('head.html--getChoose');
+            $("#navbarInput-01").val($(data).text());
+            $("#autoSearch",parent.document).hide();
+        }
+
+    </script>
+</head>
+<body>
+
+<nav class="navbar navbar-inverse navbar-embossed navbar-expand-lg head" role="navigation">
+    <!--<div class="navbar-brand">更多数据</div>-->
+    <img src="../moredata.png" style="width:125px;height:40px;"/>
+    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse-01"></button>
+    <div class="collapse navbar-collapse" id="navbar-collapse-01" style="border: none;box-shadow: none;">
+        <ul class="nav navbar-nav mr-auto">
+            <li><a id="data-way" href="../index.html" target="_top">数据</a></li>
+            <li><a id="chart-way" href="../analysis.html" target="_top">定制分析</a></li>
+            <li><a href="#fakelink">关于</a></li>
+        </ul>
+        <form class="navbar-form form-inline my-2 my-lg-0" action="#" role="search">
+            <div class="form-group">
+                <div class="input-group">
+                    <input class="form-control" id="navbarInput-01" type="search" placeholder="Search">
+                    <span class="input-group-btn">
+                      <button type="submit" class="btn"><span class="fui-search"></span></button>
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div><!-- /.navbar-collapse -->
+</nav><!-- /navbar -->
+<div class="sub-head flex">
+    <span class="description" style="margin-left: 36px;">
+        每日风云榜跟踪，及时追踪雪球组合风云榜三大榜单TOP100<br/>
+        筛选持仓比重、组合持仓、板块比重等数据，生成相应组合<br/>
+        股市有风险，入市需谨慎</span>
+
+    <div style="flex:1;"></div>
+    <div class="description flex" style="padding-bottom:12px;margin-top: 36px;margin-right: 36px;">
+        页面数据来自<img src="../xueqiu-logotype-透明底白字.png" style="width: 100px;height: 40px;">仅供参考
+    </div>
+</div>
+<script src="https://unpkg.com/popper.js@1.14.1/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+<script src="../scripts/application.js"></script>
+<script src="../scripts/flat-ui.js"></script>
+</body>
+</html>

@@ -11,7 +11,6 @@ import club.moredata.util.DBPoolConnection;
 import club.moredata.util.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.PropertyFilter;
 import com.google.gson.Gson;
 import okhttp3.Response;
 
@@ -20,6 +19,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -38,10 +38,10 @@ public class AnalysisTask {
 
 //        task.getSuspensionIds(1, 20, 1000, task.getCompleteBeforeId(1, 20));
 //        LeekResult<AlsStock> leekResult = task.stockRankList(1, 100, 3000, false, OrderType.WEIGHT_DESC);
-        LeekResult leekResult = task.rebalancingRankList(1, 100, 3000,
-                OrderType.CHANGE_WEIGHT_DESC, RebalancingType.ALL);
-
-        System.out.println(JSON.toJSONString(leekResult));
+//        LeekResult leekResult = task.rebalancingRankList(1, 100, 3000,
+//                OrderType.CHANGE_WEIGHT_DESC, RebalancingType.ALL);
+//
+//        System.out.println(JSON.toJSONString(leekResult));
 //        LeekResult<AlsSegment> leekResult = task.segmentRankList(1, 20, OrderType.WEIGHT_DESC);
 //        System.out.println(JSON.toJSONString(leekResult));
 
@@ -66,6 +66,9 @@ public class AnalysisTask {
 
 //        task.getLatestUpdateTime(1, 30);
 //        task.snowballCubeList(1);
+        LeekResult result = task.stockRankList("1773085, 1359749, 1392200, 52627, 1423409, 1387791",6,
+                6 * 30, false, OrderType.WEIGHT_DESC);
+        System.out.println(JSON.toJSONString(result));
     }
 
     /**
@@ -99,7 +102,7 @@ public class AnalysisTask {
                             lastId = beforeId;
                         }
                         queryPs.close();
-                    }else {
+                    } else {
                         countPs.close();
                         break;
                     }
@@ -132,10 +135,7 @@ public class AnalysisTask {
      */
     private String getSuspensionIds(int level, int cubeLimit, int stockLimit, int beforeId) {
         Connection connection = null;
-        String stockIds = "";
         String suspensionIds = "";
-        int limit = stockLimit;
-        int suspensionSize = 0;
         try {
             connection = DBPoolConnection.getInstance().getConnection();
             PreparedStatement stockIdQueryPs = connection.prepareStatement(SQLBuilder.buildRankStockIdsQuery());
@@ -148,22 +148,71 @@ public class AnalysisTask {
                 stockIdList.add(stockIdsResultSet.getInt(1));
             }
             stockIdQueryPs.close();
-
-            limit = stockLimit > stockIdList.size() ? (stockIdList.size() - 1) : (stockLimit - 1);
-            int tempCount = 0;
-            for (Integer stockId : stockIdList) {
-                if (tempCount < limit) {
-                    stockIds += stockId + "%2C";
-                    tempCount++;
-                    continue;
-                } else if (tempCount == limit) {
-                    stockIds += stockId + "%2C";
-                } else {
-                    stockIds = String.valueOf(stockId);
+            suspensionIds = fetchQuotep(stockIdList, stockLimit);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
                 }
-                tempCount++;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
 
-                Response response = ApiManager.getInstance().fetchStockQuotep(stockIds);
+        return suspensionIds;
+    }
+
+    public String getSuspensionIds(String ids, int stockLimit) {
+        Connection connection = null;
+        String suspensionIds = "";
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            PreparedStatement stockIdQueryPs =
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeRankStockIdsQuery(ids));
+            ResultSet stockIdsResultSet = stockIdQueryPs.executeQuery();
+            List<Integer> stockIdList = new ArrayList<>();
+            while (stockIdsResultSet.next()) {
+                stockIdList.add(stockIdsResultSet.getInt(1));
+            }
+            stockIdQueryPs.close();
+
+            suspensionIds = fetchQuotep(stockIdList, stockLimit);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return suspensionIds;
+    }
+
+    private String fetchQuotep(List<Integer> stockIdList, int stockLimit) {
+        String stockIds = "";
+        String suspensionIds = "";
+        int suspensionSize = 0;
+        int limit = stockLimit > stockIdList.size() ? (stockIdList.size() - 1) : (stockLimit - 1);
+        int tempCount = 0;
+        for (Integer stockId : stockIdList) {
+            if (tempCount < limit) {
+                stockIds += stockId + "%2C";
+                tempCount++;
+                continue;
+            } else if (tempCount == limit) {
+                stockIds += stockId + "%2C";
+            } else {
+                stockIds = String.valueOf(stockId);
+            }
+            tempCount++;
+
+            Response response = ApiManager.getInstance().fetchStockQuotep(stockIds);
+            try {
                 String res = response.body().string();
                 System.out.println(res);
                 JSONObject jsonObject = JSON.parseObject(res);
@@ -182,19 +231,11 @@ public class AnalysisTask {
                 if (tempCount - suspensionSize >= stockLimit) {
                     break;
                 }
-            }
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != connection) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
 
+        }
         return suspensionIds;
     }
 
@@ -225,7 +266,7 @@ public class AnalysisTask {
             double cash = 0;
             int count = 0;
             if (totalResultSet.next()) {
-                cash = Arith.mul(Arith.sub(1, Arith.div(totalResultSet.getDouble(1), cubeLimit * 100.0, 8)),100);
+                cash = Arith.mul(Arith.sub(1, Arith.div(totalResultSet.getDouble(1), cubeLimit * 100.0, 8)), 100);
                 count = totalResultSet.getInt(2);
             }
             totalPs.close();
@@ -253,7 +294,7 @@ public class AnalysisTask {
                 alsStock.setWeight(resultSet.getDouble(6));
                 alsStock.setCount(resultSet.getInt(7));
                 alsStock.setPercent(resultSet.getDouble(8));
-                double percentWithCash = Arith.div(Arith.mul(Arith.sub(100,cash),resultSet.getDouble(8)),100,4);
+                double percentWithCash = Arith.div(Arith.mul(Arith.sub(100, cash), resultSet.getDouble(8)), 100, 4);
                 alsStock.setPercentWithCash(percentWithCash);
                 alsStockList.add(alsStock);
             }
@@ -313,7 +354,7 @@ public class AnalysisTask {
                 alsSegment.setWeight(resultSet.getDouble(3));
                 alsSegment.setCount(resultSet.getInt(4));
                 alsSegment.setPercent(resultSet.getDouble(5));
-                alsSegment.setPercentWithCash(Arith.mul(Arith.div(resultSet.getDouble(3), cubeLimit * 100.0, 8),100));
+                alsSegment.setPercentWithCash(Arith.mul(Arith.div(resultSet.getDouble(3), cubeLimit * 100.0, 8), 100));
                 alsSegmentList.add(alsSegment);
             }
             leekSegmentPs.close();
@@ -325,7 +366,7 @@ public class AnalysisTask {
             double cash = 0;
             int count = 0;
             if (totalResultSet.next()) {
-                cash = Arith.mul(Arith.sub(1, Arith.div(totalResultSet.getDouble(1), cubeLimit * 100.0, 8)),100);
+                cash = Arith.mul(Arith.sub(1, Arith.div(totalResultSet.getDouble(1), cubeLimit * 100.0, 8)), 100);
                 count = totalResultSet.getInt(2);
             }
             totalPs.close();
@@ -467,10 +508,11 @@ public class AnalysisTask {
 
     /**
      * 最新一期雪球风云榜
+     *
      * @param level
      * @return
      */
-    public LeekResult<AlsCube> snowballCubeList(int level){
+    public LeekResult<AlsCube> snowballCubeList(int level) {
         int beforeId = getCompleteBeforeId(level, 100);
         Connection connection = null;
         LeekResult<AlsCube> leekResult = null;
@@ -547,6 +589,149 @@ public class AnalysisTask {
             }
         }
         return updateTime;
+    }
+
+    /**
+     * 指定组合个股排行
+     *
+     * @param cubeIds
+     * @param cubeSize
+     * @param stockLimit
+     * @param removeSuspensionStock
+     * @param orderType
+     * @return
+     */
+    public LeekResult<AlsStock> stockRankList(String cubeIds,int cubeSize, int stockLimit,
+                                              boolean removeSuspensionStock,
+                                              OrderType orderType) {
+        LeekResult<AlsStock> leekResult = null;
+        Connection connection = null;
+
+        String suspensionIds;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            PreparedStatement stockIdQueryPs =
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeRankStockIdsQuery(cubeIds));
+            ResultSet stockIdsResultSet = stockIdQueryPs.executeQuery();
+            List<Integer> stockIdList = new ArrayList<>();
+            double totalWeight = 0;
+            double cash = 0;
+            while (stockIdsResultSet.next()) {
+                stockIdList.add(stockIdsResultSet.getInt(1));
+                totalWeight = Arith.add(totalWeight, stockIdsResultSet.getDouble(2));
+            }
+            cash = Arith.mul(Arith.sub(1, Arith.div(totalWeight, cubeSize * 100.0, 8)), 100);
+            stockIdQueryPs.close();
+            suspensionIds = removeSuspensionStock ? fetchQuotep(stockIdList, stockLimit) : "";
+
+            PreparedStatement leekStockPs =
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeStockRankQuery(cubeIds, suspensionIds));
+            ResultSet resultSet = leekStockPs.executeQuery();
+            int rank = 0;
+            List<AlsStock> alsStockList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsStock alsStock = new AlsStock();
+                alsStock.setRank(rank);
+                alsStock.setStockName(resultSet.getString(1));
+                alsStock.setStockId(resultSet.getInt(2));
+                alsStock.setStockSymbol(resultSet.getString(3));
+                alsStock.setSegmentName(resultSet.getString(4));
+                alsStock.setSegmentColor(resultSet.getString(5));
+                alsStock.setWeight(resultSet.getDouble(6));
+                alsStock.setCount(resultSet.getInt(7));
+                alsStock.setPercent(resultSet.getDouble(8)>100?100:resultSet.getDouble(8));
+                double percentWithCash = Arith.div(Arith.mul(Arith.sub(100, cash), resultSet.getDouble(8)), 100, 6);
+                alsStock.setPercentWithCash(percentWithCash);
+                alsStockList.add(alsStock);
+            }
+            leekStockPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCash(cash);
+            leekResult.setCount(alsStockList.size());
+            leekResult.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(System.currentTimeMillis()));
+            leekResult.setList(alsStockList);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
+    }
+
+    /**
+     * 组合板块比重排行
+     *
+     * @param cubeIds
+     * @param cubeSize
+     * @param orderType
+     * @return
+     */
+    public LeekResult<AlsSegment> segmentRankList(String cubeIds,int cubeSize, OrderType orderType) {
+        LeekResult<AlsSegment> leekResult = null;
+        Connection connection = null;
+
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            PreparedStatement leekSegmentPs =
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeSegmentRankQuery(cubeIds));
+            ResultSet resultSet = leekSegmentPs.executeQuery();
+            int rank = 0;
+            List<AlsSegment> alsSegmentList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsSegment alsSegment = new AlsSegment();
+                alsSegment.setRank(rank);
+                alsSegment.setSegmentName(resultSet.getString(1));
+                alsSegment.setSegmentColor(resultSet.getString(2));
+                alsSegment.setWeight(resultSet.getDouble(3));
+                alsSegment.setCount(resultSet.getInt(4));
+                alsSegment.setPercent(resultSet.getDouble(5));
+                alsSegment.setPercentWithCash(Arith.mul(Arith.div(resultSet.getDouble(3), cubeSize * 100.0, 8),
+                        100));
+                alsSegmentList.add(alsSegment);
+            }
+            leekSegmentPs.close();
+
+            PreparedStatement stockIdQueryPs =
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeRankStockIdsQuery(cubeIds));
+            ResultSet stockIdsResultSet = stockIdQueryPs.executeQuery();
+            double totalWeight = 0;
+            double cash = 0;
+            while (stockIdsResultSet.next()) {
+                totalWeight = Arith.add(totalWeight, stockIdsResultSet.getDouble(2));
+            }
+            cash = Arith.mul(Arith.sub(1, Arith.div(totalWeight, cubeSize * 100.0, 8)), 100);
+            stockIdQueryPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCash(cash);
+            leekResult.setCount(alsSegmentList.size());
+            leekResult.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(System.currentTimeMillis()));
+            leekResult.setList(alsSegmentList);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
     }
 
 }

@@ -1,0 +1,362 @@
+<html lang="en">
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>更多数据</title>
+    <link href="favicon.ico" rel="icon">
+    <link href="css/vendor/bootstrap.min.css" rel="stylesheet">
+    <link href="css/flat-ui.css" rel="stylesheet">
+    <style>
+        body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #F8F8F8;
+            opacity: 0;
+            transition: opacity 0.2s
+        }
+
+        body.bactive {
+            opacity: 1
+        }
+
+        .flex {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        h6 {
+            margin: auto 32px auto 0;
+        }
+
+        .search-bar {
+            z-index: 1000;
+            min-height: 72px;
+            width: 72%;
+            margin: -36px auto 16px auto;
+            -webkit-border-radius: 6px;
+            -moz-border-radius: 6px;
+            border-radius: 6px;
+            background-color: transparent;
+            /*box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);*/
+            display: flex;
+            flex-direction: row-reverse;
+        }
+
+        .quicktask {
+            margin: auto 16px auto 0;
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            padding: 4px 12px;
+            font-size: 14px;
+            color: #333333;
+            min-width: 72px;
+            text-align: center;
+        }
+
+        .card {
+            width: calc(100% - 72px);
+            margin: 0 36px 16px 36px;
+            -webkit-border-radius: 6px;
+            -moz-border-radius: 6px;
+            border-radius: 6px;
+            border: none;
+            background-color: white;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.12);
+            padding: 0 36px;
+        }
+
+        .duration {
+            margin-right: 32px;
+            font-weight: bold;
+            color: #1b1e21;
+        }
+
+        .bottom-line {
+            background: #00c6ff; /* fallback for old browsers */
+            background: -webkit-linear-gradient(to right, #0072ff, #00c6ff); /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to right, #0072ff, #00c6ff); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            height: 6px;
+            border-radius: 2px;
+            margin-top: -4px;
+        }
+
+        .transparent {
+            background: transparent;
+        }
+
+        .hr {
+            width: 100%;
+            height: 1px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .segment, .dimension {
+            margin-top: 12px;
+            margin-bottom: 12px;
+            min-width: 100px;
+            text-align: center;
+            color: #1b1e21;
+            background-color: #EEEEEE;
+        }
+
+        tr {
+            height: 48px;
+        }
+
+        tr th:first-child, tr td:nth-child(1) {
+            width: 8%;
+            padding: 0 48px 0 24px;
+            text-align: right;
+        }
+
+        tr th:nth-child(n+2):nth-child(-n+4), tr td:nth-child(n+2):nth-child(-n+4) {
+            width: 16%;
+            padding: 0 48px 0 24px;
+            text-align: left;
+        }
+
+        tr th:nth-child(n+5), tr td:nth-child(n+5) {
+            width: 15%;
+            padding: 0 48px 0 24px;
+            text-align: right;
+        }
+
+        /*设置奇数行颜色*/
+        table tr:nth-child(odd) {
+            background: #EEEEEE;
+        }
+
+        /*设置偶数行颜色*/
+        table tr:nth-child(even) {
+            background: #F8F8F8;
+        }
+
+        .footer {
+            margin-right: 24px;
+            font-size: 16px;
+        }
+
+        a.btn, a.btn:hover, a.btn:active, a.btn:visited, a.btn:link, a.btn:focus {
+            color: white;
+            background-color: rgba(52, 73, 94, 0.95);
+        }
+
+        table {
+            margin-top: 0;
+            width: 100%;
+        }
+
+        tr {
+            width: 100%;
+        }
+
+        #area-table > table > tbody > tr > td {
+            width: 0;
+            margin: 0 16px;
+            text-align: right;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .bdSug_wpr {
+            position: absolute;
+            z-index: 99999;
+            top: 48px;
+            right: 48px;
+            background-color: rgba(52, 73, 94, 0.95);
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+        }
+
+        ul {
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            padding: 0;
+        }
+
+        ul li {
+            list-style: none;
+            padding: 0 24px;
+            height: 48px;
+            line-height: 48px;
+            background-color: transparent;
+            color: whitesmoke;
+        }
+
+        ul li.active {
+            background-color: #F8F8F8;
+            color: #1b1e21;
+        }
+
+        .tagsinput, .bootstrap-tagsinput {
+            width: 100%;
+            padding: 8px 24px;
+            align-items: center;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        .bootstrap-tagsinput .badge {
+            height: 36px;
+            font-size: 24px;
+            text-align: center;
+            line-height: 24px;
+        }
+
+        .bootstrap-tagsinput .badge > span {
+            top: 4px;
+        }
+
+        .bootstrap-tagsinput input[type="text"] {
+            font-size: 24px;
+        }
+
+
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdn.bootcss.com/echarts/4.2.1/echarts.js"></script>
+    <script type="text/javascript" src="china.js"></script>
+    <script type="text/javascript" src="macarons.js"></script>
+    <script type="text/javascript" src="walden.js"></script>
+    <script>
+        let cubeData = null;
+
+        $(function () {
+            $('body').addClass('bactive');
+
+            let iframe = document.getElementById('iframe');
+            iframe.onload = function () {
+                this.style.visibility = 'hidden';
+                this.setAttribute('height', 'auto');
+                setTimeout(function () {
+                    iframe.setAttribute('height', iframe.contentWindow.document.body.scrollHeight);
+                    iframe.style.visibility = 'visible';
+                }, 0);
+            };
+
+
+            $('input[name="tagsinput"].tagsinput').bind('input propertychange', function () {
+                console.log('input propertychange');
+                console.log($(this).val());
+                console.log($('input[name="tagsinput"]').val());
+            }).on('change', function () {
+                console.log('change');
+                console.log($(this).val());
+            });
+
+            $('#complete').on('click', function () {
+                $.ajax({
+                    url: 'http://localhost:8080/cube/list?cubeIds=' + $('input[name="tagsinput"].tagsinput').val(),
+                    dataType: "json",
+                    success: function (data) {
+                        console.log(data);
+                        cubeData = data;
+                        createCubeList();
+                    }
+                })
+            });
+
+
+            function createCubeList() {
+                if (cubeData == null) {
+                    $('#cube-list').html('<div>输入的组合ID可能有误</div>');
+                    return;
+                }
+                let data = cubeData.data;
+                let list = data.list;
+                let html = '';
+                list.forEach(function (cube) {
+                    html += '<div>' + cube['name'] + '</div>'
+                });
+                $('#cube-list').html(html);
+
+            }
+
+
+        });
+
+
+    </script>
+</head>
+<body style="position:relative;z-index:10;">
+<div id='autoSearch' class="bdSug_wpr" style="height:auto;display: none;position:absolute;z-index:110;">
+    <ul id='showResult' style="background: rgba(52, 73, 94, 0.95);"></ul>
+</div>
+
+<iframe scrolling="no" src="common/head.html" width="100%" id="iframe" style="position:relative;z-index:100;">
+</iframe>
+
+<div class="tagsinput-primary search-bar" style="position:relative;z-index:100;">
+    <a id="complete" class="btn" style="margin: auto 0 auto 36px;" href="#fakelink">选择完毕，进行分析</a>
+    <input name="tagsinput" class="tagsinput" data-role="tagsinput" value=""/>
+</div>
+
+<div class="card" id="cube-list">
+
+</div>
+
+<div class="card">
+    <div class="flex" style="height: 48px;" id="level-duration">
+        <a id="quarter" class="duration" href="javascript:void(0);">近三个月
+            <div class="bottom-line"></div>
+        </a>
+        <a id="half-year" class="duration" href="javascript:void(0);">近六个月
+            <div class="bottom-line transparent"></div>
+        </a>
+        <a id="year" class="duration" href="javascript:void(0);">近一年
+            <div class="bottom-line transparent"></div>
+        </a>
+        <div style="flex: 1;"></div>
+        <a id="download" target="_blank" href="#" style="margin: 0 36px;">
+            <b>Excel导出</b>
+        </a>
+        <a id="track-cube" href="javascript:void(0);" data-toggle="modal" data-target="#myModal">
+            <b>查看跟踪组合</b>
+        </a>
+    </div>
+    <div class="hr"></div>
+    <!--<div class="btn-toolbar">-->
+    <div class="flex">
+        <div class="btn-group">
+            <a id="stock" class="segment btn  active" href="#fakelink">个股</span></a>
+            <a id="segment" class="segment btn " href="#fakelink">板块</a>
+            <a id="rebalancing" class="segment btn" href="#fakelink">调仓</a>
+            <a id="showDays" class="segment btn" href="#fakelink">在榜天数</a>
+        </div>
+        <b id="cash" style="margin-left: 24px;"></b>
+        <div id="update-time" style="flex: 1;text-align: right;"></div>
+
+    </div>
+
+    <!--</div> &lt;!&ndash; /toolbar &ndash;&gt;-->
+    <div id="chart" style="width: 100%;"></div>
+    <!--<div class="hr"></div>-->
+    <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
+        <div class="footer" id="size">共0条数据</div>
+        <a id="next-page" class="footer" href="javascript:void(0);">下一页</a>
+        <div class="footer" id="page">1/1</div>
+        <a id='last-page' class="footer" href="javascript:void(0);">上一页</a>
+
+    </div>
+
+</div>
+
+
+<footer class="flex"
+        style="background-color:#F8F8F8;width: 100%;height: 72px;padding:0 72px;flex-direction: row-reverse;">
+    <a href="javascrip:void(0);" style="width:120px;text-align: right;">意见反馈</a>
+    <b style="flex:1;text-align: center">数据来源雪球，仅供参考</b>
+    <span style="width:120px;"></span>
+</footer>
+<script src="https://unpkg.com/popper.js@1.14.1/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+<script src="scripts/application.js"></script>
+<script src="scripts/flat-ui.js"></script>
+</body>
+</html>

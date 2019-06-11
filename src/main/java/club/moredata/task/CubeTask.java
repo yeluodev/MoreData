@@ -4,7 +4,9 @@ import club.moredata.api.ApiCallback;
 import club.moredata.api.ApiManager;
 import club.moredata.db.SQLBuilder;
 import club.moredata.entity.*;
+import club.moredata.model.LeekResult;
 import club.moredata.util.DBPoolConnection;
+import club.moredata.util.DateUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import okhttp3.Response;
@@ -165,6 +167,7 @@ public class CubeTask {
 
     /**
      * 查询组合调仓历史并插入数据库
+     *
      * @param cubeId
      */
     private void fetchRebalancingHistory(int cubeId) {
@@ -412,10 +415,51 @@ public class CubeTask {
     /**
      * 搜索雪球组合
      *
-     * @param key 关键词
+     * @param cubeIds 组合id，形如19383,232323,43412
      */
-    public void searchCube(String key){
+    public LeekResult<Cube> fetchCubeList(String cubeIds) {
+        Connection connection = null;
+        LeekResult<Cube> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
 
+            PreparedStatement queryPs = connection.prepareStatement(SQLBuilder.buildSpecifiedCubeQuery(cubeIds));
+            ResultSet resultSet = queryPs.executeQuery();
+            List<Cube> cubeList = new ArrayList<>();
+            while (resultSet.next()) {
+                Cube cube = new Cube();
+                cube.setId(resultSet.getInt(1));
+                cube.setName(resultSet.getString(2));
+                cube.setSymbol(resultSet.getString(3));
+                cube.setDescription(resultSet.getString(4));
+                Account owner = new Account();
+                owner.setId(resultSet.getLong(5));
+                owner.setScreenName(resultSet.getString(10));
+                cube.setOwner(owner);
+                cube.setFollowerCount(resultSet.getInt(6));
+                cube.setNetValue(resultSet.getFloat(7));
+                cube.setCreatedAt(resultSet.getLong(8));
+                cube.setUpdatedAt(resultSet.getLong(9));
+                cubeList.add(cube);
+            }
+
+            leekResult = new LeekResult<>();
+            leekResult.setCount(cubeList.size());
+            leekResult.setUpdatedAt(DateUtil.getInstance().getTimeNow());
+            leekResult.setList(cubeList);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
     }
 
 }

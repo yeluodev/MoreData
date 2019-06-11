@@ -9,6 +9,7 @@ import club.moredata.model.LeekResponse;
 import club.moredata.model.LeekResult;
 import club.moredata.model.RebStock;
 import club.moredata.task.AutoTask;
+import club.moredata.task.CubeTask;
 import club.moredata.util.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.PropertyFilter;
@@ -34,6 +35,7 @@ public class CubeServlet extends BaseServlet {
     private Pattern suspensionPattern = Pattern.compile("[01]");
     private Pattern cashPattern = Pattern.compile("[01]");
     private Pattern orderPattern = Pattern.compile("[1-4]");
+    private Pattern cubeIdsPattern = Pattern.compile("^(([1-9]\\d*[,])*[1-9]\\d*)$");
 
     private Pattern paramKeyPattern = Pattern.compile("code|message|data|id|status|cube_id|error_status" +
             "|error_code|error_message|error_message|comment");
@@ -63,6 +65,7 @@ public class CubeServlet extends BaseServlet {
         String cash = request.getParameter("cash");
         String orderType = request.getParameter("order");
         String key = request.getParameter("key");
+        String cubeIds = request.getParameter("cubeIds");
 
         if (level == null) {
             level = "1";
@@ -86,6 +89,12 @@ public class CubeServlet extends BaseServlet {
             key = "";
         }
 
+        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ","")).matches()) {
+            leekResponse = LeekResponse.errorParameterResponse();
+            out.print(JSON.toJSONString(leekResponse));
+            return;
+        }
+
         if (!levelPattern.matcher(level).matches()
                 || !cubePattern.matcher(cubeLimit).matches()
                 || !stockPattern.matcher(stockLimit).matches()
@@ -103,6 +112,7 @@ public class CubeServlet extends BaseServlet {
         int suspensionInt = Integer.valueOf(suspension);
         int cashInt = Integer.valueOf(cash);
 
+        PropertyFilter propertyFilter = (object, name, value) -> true;
         AutoTask autoTask = new AutoTask();
         switch (matchPath) {
             case "rebalancing":
@@ -113,6 +123,7 @@ public class CubeServlet extends BaseServlet {
                 } else {
                     leekResponse = LeekResponse.successResponse(rebalancing);
                 }
+                propertyFilter = (object, name, value) -> paramKeyPattern.matcher(name).matches();
                 break;
             case "track":
                 LeekResult<RebStock> leekResult = autoTask.trackCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
@@ -131,17 +142,17 @@ public class CubeServlet extends BaseServlet {
                     leekResponse = LeekResponse.successResponse(searchResult);
                 }
                 break;
+            case "list":
+                CubeTask task = new CubeTask();
+                LeekResult<Cube> cubeLeekResult = task.fetchCubeList(cubeIds);
+                leekResponse = LeekResponse.successResponse(cubeLeekResult);
+                propertyFilter = (object, name, value) -> !"cash".equals(name);
+                break;
             default:
                 leekResponse = LeekResponse.errorURLResponse();
                 break;
         }
 
-        PropertyFilter propertyFilter = (object, name, value) -> {
-            if(matchPath.equals("rebalancing")){
-                return paramKeyPattern.matcher(name).matches();
-            }
-            return true;
-        };
         out.print(JSON.toJSONString(leekResponse, propertyFilter));
     }
 

@@ -30,6 +30,7 @@ public class AnalysisServlet extends HttpServlet {
     private Pattern suspensionPattern = Pattern.compile("[01]");
     private Pattern orderPattern = Pattern.compile("[1-6]");
     private Pattern rebalancingPattern = Pattern.compile("[1-3]");
+    private Pattern cubeIdsPattern = Pattern.compile("^(([1-9]\\d*[,])*[1-9]\\d*)$");
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -49,6 +50,7 @@ public class AnalysisServlet extends HttpServlet {
         String suspension = request.getParameter("suspension");
         String orderType = request.getParameter("order");
         String rebalancingType = request.getParameter("rebalancing");
+        String cubeIds = request.getParameter("cubeIds");
 
         LeekResponse leekResponse = null;
         if (type == null) {
@@ -71,6 +73,12 @@ public class AnalysisServlet extends HttpServlet {
         }
         if (rebalancingType == null) {
             rebalancingType = "1";
+        }
+
+        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ","")).matches()) {
+            leekResponse = LeekResponse.errorParameterResponse();
+            out.print(JSON.toJSONString(leekResponse));
+            return;
         }
 
         if (!typePattern.matcher(type).matches()
@@ -100,12 +108,26 @@ public class AnalysisServlet extends HttpServlet {
         AnalysisTask analysisTask = new AnalysisTask();
         switch (type) {
             case "1":
-                LeekResult<AlsStock> stockData = analysisTask.stockRankList(levelInt, cubeLimitInt, stockLimitInt,
-                        suspensionInt == 0, OrderType.getType(orderType));
+                LeekResult<AlsStock> stockData;
+                if (cubeIds == null) {
+                    stockData = analysisTask.stockRankList(levelInt, cubeLimitInt, stockLimitInt,
+                            suspensionInt == 0, OrderType.getType(orderType));
+                } else {
+                    int count = cubeIds.split(",").length;
+                    stockData = analysisTask.stockRankList(cubeIds, count, stockLimitInt,
+                            suspensionInt == 0, OrderType.getType(orderType));
+                }
+
                 leekResponse = LeekResponse.generateResponse(stockData);
                 break;
             case "2":
-                LeekResult<AlsSegment> segmentData = analysisTask.segmentRankList(levelInt, cubeLimitInt, OrderType.getType(orderType));
+                LeekResult<AlsSegment> segmentData;
+                if (cubeIds == null) {
+                    segmentData = analysisTask.segmentRankList(levelInt, cubeLimitInt, OrderType.getType(orderType));
+                } else {
+                    int count = cubeIds.split(",").length;
+                    segmentData = analysisTask.segmentRankList(cubeIds, count, OrderType.getType(orderType));
+                }
                 leekResponse = LeekResponse.generateResponse(segmentData);
                 break;
             case "3":
@@ -130,10 +152,10 @@ public class AnalysisServlet extends HttpServlet {
         }
 
         PropertyFilter propertyFilter = (object, name, value) -> {
-            if (typeInt > 2 && name.equals("cash")) {
+            if (typeInt > 2 && "cash".equals(name)) {
                 return false;
             }
-            return typeInt != 5 || !name.equals("showDaysCount");
+            return typeInt != 5 || !"showDaysCount".equals(name);
         };
         out.print(JSON.toJSONString(leekResponse, propertyFilter));
     }

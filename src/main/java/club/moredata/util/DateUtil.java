@@ -57,6 +57,15 @@ public class DateUtil {
     }
 
     /**
+     * 获取当前时间，形如2019-6-11 17:27
+     * @return
+     */
+    public String getTimeNow(){
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        return sdf.format(System.currentTimeMillis());
+    }
+
+    /**
      * 获取所给时间戳日期，形如20190531
      *
      * @param timestamp
