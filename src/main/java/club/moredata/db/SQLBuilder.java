@@ -481,13 +481,13 @@ public class SQLBuilder {
     public static String buildSpecifiedCubeStockRankQuery(String ids, String suspensionIds) {
         String sql = "SELECT substring_index(group_concat(stock_name order by _id DESC),',',1) as stock_name," +
                 "stock_id,stock_symbol,segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE " +
-                "`cube`.`id` IN (%s) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id` %s) AS temp )," +
+                "(`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id` %s) AS temp )," +
                 "6) " +
-                "AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (%s) AND `cube`" +
+                "AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`" +
                 ".`view_rebalancing` = `holdings`.`view_rebalancing_id` %s) AS temp GROUP BY stock_id ORDER BY weight" +
                 " DESC,count DESC;";
         String stockIdCondition = getStockIdCondition(suspensionIds);
-        return String.format(sql, ids, stockIdCondition, ids, stockIdCondition);
+        return String.format(sql, ids, ids, stockIdCondition, ids, ids, stockIdCondition);
     }
 
     /**
@@ -498,13 +498,9 @@ public class SQLBuilder {
     public static String buildSpecifiedCubeRankStockIdsQuery(String ids) {
         String sql = "SELECT stock_id,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count FROM (SELECT `holdings`.* from" +
                 " " +
-                "`cube`,`holdings` WHERE `cube`.`id` IN (%s) AND `cube`.`view_rebalancing` = `holdings`" +
+                "`cube`,`holdings` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`view_rebalancing` = `holdings`" +
                 ".`view_rebalancing_id`) AS temp GROUP BY stock_id ORDER BY weight DESC,count DESC;";
-        return String.format(sql, ids);
-    }
-
-    public static String buildSpecifiedCubeStockTotalQuery() {
-        return "";
+        return String.format(sql, ids, ids);
     }
 
     /**
@@ -516,11 +512,11 @@ public class SQLBuilder {
         String sql = "SELECT segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM" +
                 "(weight)" +
                 "*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE " +
-                "`cube`.`id` IN (%s) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) " +
+                "(`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) " +
                 "AS" +
-                " percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (%s) AND `cube`" +
-                ".`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_id ORDER BY weight DESC,count DESC;";
-        return String.format(sql, ids, ids);
+                " percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`" +
+                ".`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_name ORDER BY weight DESC,count DESC;";
+        return String.format(sql, ids, ids, ids, ids);
     }
 
     /**
@@ -530,7 +526,7 @@ public class SQLBuilder {
      * @return
      */
     public static String buildSpecifiedCubeQuery(String ids) {
-        String sql = "SELECT `cube`.`id`,`cube`.`name`,`cube`.`symbol`,`cube`.`description`,`cube`.`owner_id`,`cube`.`follower_count`,`cube`.`net_value`,`cube`.`created_at`,`cube`.`updated_at`,`user`.`screen_name` FROM `cube`,`user` WHERE `cube`.`id` IN (%s) AND `cube`.`owner_id` = `user`.`id`;";
-        return String.format(sql, ids);
+        String sql = "SELECT `cube`.`id`,`cube`.`name`,`cube`.`symbol`,`cube`.`description`,`cube`.`owner_id`,`cube`.`follower_count`,`cube`.`net_value`,`cube`.`created_at`,`cube`.`updated_at`,`user`.`screen_name` FROM `cube`,`user` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`owner_id` = `user`.`id`;";
+        return String.format(sql, ids, ids);
     }
 }

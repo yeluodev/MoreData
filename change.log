@@ -14,9 +14,6 @@
             个股持仓sql
                 SELECT substring_index(group_concat(stock_name order by _id DESC),',',1) as stock_name,stock_id,stock_symbol,segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY stock_id ORDER BY weight DESC,count DESC;
             板块持仓sql
-            SELECT segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_id ORDER BY weight DESC,count DESC;
+                SELECT segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_id ORDER BY weight DESC,count DESC;
 
 
-            sql
-                select cube
-                select holdings

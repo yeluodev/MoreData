@@ -44,16 +44,6 @@
             flex-direction: row-reverse;
         }
 
-        .quicktask {
-            margin: auto 16px auto 0;
-            border: 1px solid rgba(0, 0, 0, 0.3);
-            padding: 4px 12px;
-            font-size: 14px;
-            color: #333333;
-            min-width: 72px;
-            text-align: center;
-        }
-
         .card {
             width: calc(100% - 72px);
             margin: 0 36px 16px 36px;
@@ -91,13 +81,18 @@
             background-color: rgba(0, 0, 0, 0.2);
         }
 
-        .segment, .dimension {
+        .segment {
             margin-top: 12px;
             margin-bottom: 12px;
             min-width: 100px;
             text-align: center;
             color: #1b1e21;
             background-color: #EEEEEE;
+        }
+
+        .active {
+            color: white;
+            background-color: rgba(52, 73, 94, 0.95);
         }
 
         tr {
@@ -137,7 +132,7 @@
             font-size: 16px;
         }
 
-        a.btn, a.btn:hover, a.btn:active, a.btn:visited, a.btn:link, a.btn:focus {
+        a#complete, a#complete:hover, a#complete:active, a#complete:visited, a#complete:link, a#complete:focus {
             color: white;
             background-color: rgba(52, 73, 94, 0.95);
         }
@@ -217,6 +212,25 @@
             font-size: 24px;
         }
 
+        .cube {
+            display: flex;
+            flex-direction: column;
+            margin: 12px;
+            padding: 12px 16px;
+            height: 200px;
+            width: calc((100% - 96px) / 4);
+            border-radius: 8px;
+            background-color: rgba(52, 73, 94, 0.95);
+            color: whitesmoke;
+        }
+
+        .avatar {
+            -webkit-border-radius: 36px;
+            -moz-border-radius: 36px;
+            border-radius: 36px;
+            width: 36px;
+            height: 36px;
+        }
 
     </style>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
@@ -226,7 +240,23 @@
     <script type="text/javascript" src="macarons.js"></script>
     <script type="text/javascript" src="walden.js"></script>
     <script>
+        let cubeIds = null;
         let cubeData = null;
+        let chartsArr = [];
+        let type = 1;
+        let page = 1;
+        let maxPage = 1;
+        let totalCount = 0;
+
+        let headKeys = [[],
+            ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
+            ['序号', '名称', '比重/%', '满仓比重/%'],
+            ['序号', '名称', '代码', '调仓比重/%']];
+        let paramKeys = [[],
+            ['rank', 'stockName', 'stockSymbol', 'segmentName', 'count', 'percentWithCash', 'percent'],
+            ['rank', 'segmentName', 'percentWithCash', 'percent'],
+            ['rank', 'stockName', 'stockSymbol', 'percent']];
+        let selectors = ['a.segment', 'a.dimension'];
 
         $(function () {
             $('body').addClass('bactive');
@@ -242,29 +272,190 @@
             };
 
 
-            $('input[name="tagsinput"].tagsinput').bind('input propertychange', function () {
-                console.log('input propertychange');
-                console.log($(this).val());
-                console.log($('input[name="tagsinput"]').val());
-            }).on('change', function () {
-                console.log('change');
-                console.log($(this).val());
+            $('input[name="tagsinput"].tagsinput').on('change', function () {
+                cubeIds = $(this).val();
             });
 
             $('#complete').on('click', function () {
                 $.ajax({
-                    url: 'http://localhost:8080/cube/list?cubeIds=' + $('input[name="tagsinput"].tagsinput').val(),
+                    url: 'http://localhost:8080/cube/list?cubeIds=' + cubeIds,
                     dataType: "json",
                     success: function (data) {
                         console.log(data);
                         cubeData = data;
                         createCubeList();
                     }
-                })
+                });
+
+                // $.ajax({
+                //     url: 'http://localhost:8080/analysis?type='+type+'&cubeIds=' + cubeIds,
+                //     dataType: "json",
+                //     success: function (data) {
+                //         console.log(data);
+                //         cubeData = data;
+                //         createResultTable();
+                //     }
+                // })
+                createResultTable();
+            });
+
+            selectors.forEach(function (value) {
+                $(value).mouseenter(function () {
+                    if ($(this).hasClass('active')) {
+                        $(this).css('color', 'white');
+                    } else {
+                        $(this).css('color', '#1b1e21');
+                    }
+                }).mouseleave(function () {
+                    if ($(this).hasClass('active')) {
+                        $(this).css('color', 'white');
+                    } else {
+                        $(this).css('color', '#1b1e21');
+                    }
+                }).click(function () {
+                    $(value).css('color', '#1b1e21');
+                    $(this).css('color', 'white');
+                }).focusout(function () {
+                    if ($(this).hasClass('active')) {
+                        $(this).css('color', 'white');
+                    } else {
+                        $(this).css('color', '#1b1e21');
+                    }
+                });
             });
 
 
+            let catIds = ['#stock', '#segment', '#rebalancing'];
+            catIds.forEach(function (value) {
+                $(value).on('click', function () {
+                    switch (value) {
+                        case '#stock':
+                            type = 1;
+                            break;
+                        case '#segment':
+                            type = 2;
+                            break;
+                        case '#rebalancing':
+                            type = 3;
+                            break;
+                    }
+                    page = 1;
+                    fillTableData(type, cubeIds, page, true);
+                });
+            });
+
+            $('#last-page').on('click', function () {
+                if (page === 1) {
+                    alert("已是第一页");
+                    return;
+                }
+                page--;
+                fillTableData(type, cubeIds, page, false);
+            });
+            $('#next-page').on('click', function () {
+                if (page === maxPage) {
+                    alert("已是最后一页");
+                    return;
+                }
+                page++;
+                fillTableData(type, cubeIds, page, false);
+            });
+
+            /**
+             * 填充表格数据
+             * @param type
+             * @param cubeIds
+             * @param page
+             */
+            function fillTableData(type, cubeIds, page, forceRefresh) {
+                if (chartsArr[type] == null || forceRefresh) {
+                    fetchAnalysisResult(type, cubeIds);
+                    return;
+                }
+                this.type = type;
+                this.page = page;
+
+                let list = chartsArr[type].data.list;
+                let html = "<table><tr>";
+
+                headKeys[type].forEach(function (value) {
+                    html += '<th>' + value + '</th>';
+                });
+                html += '</tr>';
+
+                for (let i = 15 * (page - 1), count = 0; count < 15; i++, count++) {
+                    html += '<tr>';
+                    let item = list[i];
+                    if (item == null) {
+                        headKeys[type].forEach(function () {
+                            html += "<td></td>";
+                        });
+                        html += '</tr>';
+                        continue;
+                    }
+
+
+                    paramKeys[type].forEach(function (value) {
+                        if (type === 4 && value === 'symbol') {
+                            html += '<td><a target="_blank" href="https://xueqiu.com/P/' + item[value] + '">' + item[value] + '</a></td>';
+                            return;
+                        }
+
+                        if (type === 4 && value === 'screenName') {
+                            html += '<td><a target="_blank" href="https://xueqiu.com/u/' + item['ownerId'] + '">' + item[value] + '</a></td>';
+                            return;
+                        }
+
+                        if (value === 'percent'
+                            || value === 'percentWithCash'
+                            || value === 'netValue') {
+                            html += '<td>' + item[value].toFixed(type === 3 ? 6 : 4) + '</td>';
+                        } else {
+                            html += '<td>' + item[value] + '</td>';
+                        }
+                    });
+                    html += '</tr>';
+                }
+                html += "</table>";
+                document.getElementById('result-table').innerHTML = html;
+                totalCount = chartsArr[type].data['count'];
+                maxPage = totalCount % 15 === 0 ? totalCount / 15 : Math.ceil(totalCount / 15);
+                document.getElementById('page').innerHTML = page + "/" + maxPage;
+                document.getElementById('size').innerHTML = "共" + totalCount + "条数据";
+                let cash = chartsArr[type].data['cash'];
+                document.getElementById('cash').innerHTML = cash == null ? '' : ("现金仓位:" + cash + "%");
+                let updatedAt = chartsArr[type].data['updatedAt'];
+                document.getElementById('update-time').innerHTML = "更新于" + updatedAt;
+            }
+
+            /**
+             * 请求接口数据
+             * @param type
+             * @param cubeIds
+             */
+            function fetchAnalysisResult(type, cubeIds) {
+                let ajax = new XMLHttpRequest();
+                ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds);
+                ajax.send();
+                ajax.onreadystatechange = function () {
+                    if (ajax.readyState === 4 && ajax.status === 200) {
+                        let chart = ajax.responseText;
+                        console.log(chart);
+                        chart = JSON.parse(chart);
+                        chartsArr[type] = chart;
+                        fillTableData(type, cubeIds, 1, false);
+                    }
+                }
+            }
+
+            function createResultTable() {
+                $('#result-container').show();
+                fillTableData(type, cubeIds, 1, true);
+            }
+
+
             function createCubeList() {
+                $('#cube-container').show();
                 if (cubeData == null) {
                     $('#cube-list').html('<div>输入的组合ID可能有误</div>');
                     return;
@@ -272,16 +463,23 @@
                 let data = cubeData.data;
                 let list = data.list;
                 let html = '';
+
                 list.forEach(function (cube) {
-                    html += '<div>' + cube['name'] + '</div>'
+                    html += '<a class="cube" target="_blank" href="https://xueqiu.com/P/' + cube['symbol'] + '">';
+                    html += '<div><h5>' + cube['name'] + ' ' + cube['symbol'] + '</h5></div>';
+                    html += '<div style="flex: 1;font-size: 16px;padding: 4px 8px;">' + cube['description'] + '</div>';
+                    html += '<div class="flex">';
+                    html += '<div style="flex:1;"><h4 style="font-weight: 900;">' + cube['netValue'] + '</h4></div>';
+                    html += '<img src="//xavatar.imedao.com/community/20183/1523249099664-1523249099851.jpg!50x50.png" class="avatar">';
+                    html += '<div style="margin: 0 0 0 12px;">' + cube['owner']['screenName'] + '</div>';
+                    html += '</div></a>';
                 });
                 $('#cube-list').html(html);
-
             }
-
-
         });
 
+
+        //TODO 样式调整/任意组合调仓情况API/生成跟踪组合
 
     </script>
 </head>
@@ -295,26 +493,26 @@
 
 <div class="tagsinput-primary search-bar" style="position:relative;z-index:100;">
     <a id="complete" class="btn" style="margin: auto 0 auto 36px;" href="#fakelink">选择完毕，进行分析</a>
-    <input name="tagsinput" class="tagsinput" data-role="tagsinput" value=""/>
+    <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="1377622,975830,1257775,1365638,1423409"/>
 </div>
 
-<div class="card" id="cube-list">
-
-</div>
-
-<div class="card">
-    <div class="flex" style="height: 48px;" id="level-duration">
-        <a id="quarter" class="duration" href="javascript:void(0);">近三个月
+<div class="card" id="cube-container" style="display: none;background-color: transparent;box-shadow: none;">
+    <div class="flex">
+        <a href="javascript:void(0);" style="margin: 12px 0;">你要添加分析的组合如下:
             <div class="bottom-line"></div>
         </a>
-        <a id="half-year" class="duration" href="javascript:void(0);">近六个月
-            <div class="bottom-line transparent"></div>
-        </a>
-        <a id="year" class="duration" href="javascript:void(0);">近一年
-            <div class="bottom-line transparent"></div>
+    </div>
+    <div class="hr"></div>
+    <div id="cube-list" class="flex"></div>
+</div>
+
+<div class="card" id="result-container" style="display: none;">
+    <div class="flex" style="height: 48px;" id="level-duration">
+        <a id="quarter" class="duration" href="javascript:void(0);">分析结果
+            <div class="bottom-line"></div>
         </a>
         <div style="flex: 1;"></div>
-        <a id="download" target="_blank" href="#" style="margin: 0 36px;">
+        <a id="download" target="_blank" href="#" style="margin: 0 36px;" hidden>
             <b>Excel导出</b>
         </a>
         <a id="track-cube" href="javascript:void(0);" data-toggle="modal" data-target="#myModal">
@@ -327,8 +525,7 @@
         <div class="btn-group">
             <a id="stock" class="segment btn  active" href="#fakelink">个股</span></a>
             <a id="segment" class="segment btn " href="#fakelink">板块</a>
-            <a id="rebalancing" class="segment btn" href="#fakelink">调仓</a>
-            <a id="showDays" class="segment btn" href="#fakelink">在榜天数</a>
+            <a id="rebalancing" class="segment btn" href="#fakelink" hidden>调仓</a>
         </div>
         <b id="cash" style="margin-left: 24px;"></b>
         <div id="update-time" style="flex: 1;text-align: right;"></div>
@@ -336,7 +533,7 @@
     </div>
 
     <!--</div> &lt;!&ndash; /toolbar &ndash;&gt;-->
-    <div id="chart" style="width: 100%;"></div>
+    <div id="result-table" style="width: 100%;"></div>
     <!--<div class="hr"></div>-->
     <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
         <div class="footer" id="size">共0条数据</div>
@@ -350,7 +547,7 @@
 
 
 <footer class="flex"
-        style="background-color:#F8F8F8;width: 100%;height: 72px;padding:0 72px;flex-direction: row-reverse;">
+        style="background-color:#F8F8F8;width: 100%;height: 72px;padding:0 72px;flex-direction: row-reverse;" hidden>
     <a href="javascrip:void(0);" style="width:120px;text-align: right;">意见反馈</a>
     <b style="flex:1;text-align: center">数据来源雪球，仅供参考</b>
     <span style="width:120px;"></span>

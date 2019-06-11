@@ -4,6 +4,7 @@ import club.moredata.db.OrderType;
 import club.moredata.db.RebalancingType;
 import club.moredata.model.*;
 import club.moredata.task.AnalysisTask;
+import club.moredata.util.Util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.PropertyFilter;
 
@@ -30,7 +31,7 @@ public class AnalysisServlet extends HttpServlet {
     private Pattern suspensionPattern = Pattern.compile("[01]");
     private Pattern orderPattern = Pattern.compile("[1-6]");
     private Pattern rebalancingPattern = Pattern.compile("[1-3]");
-    private Pattern cubeIdsPattern = Pattern.compile("^(([1-9]\\d*[,])*[1-9]\\d*)$");
+    private Pattern cubeIdsPattern = Pattern.compile("^(((ZH)?[1-9]\\d*[,])*(ZH)?[1-9]\\d*)$");
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -114,7 +115,7 @@ public class AnalysisServlet extends HttpServlet {
                             suspensionInt == 0, OrderType.getType(orderType));
                 } else {
                     int count = cubeIds.split(",").length;
-                    stockData = analysisTask.stockRankList(cubeIds, count, stockLimitInt,
+                    stockData = analysisTask.stockRankList(Util.dealCubeIds(cubeIds), count, stockLimitInt,
                             suspensionInt == 0, OrderType.getType(orderType));
                 }
 
@@ -126,7 +127,7 @@ public class AnalysisServlet extends HttpServlet {
                     segmentData = analysisTask.segmentRankList(levelInt, cubeLimitInt, OrderType.getType(orderType));
                 } else {
                     int count = cubeIds.split(",").length;
-                    segmentData = analysisTask.segmentRankList(cubeIds, count, OrderType.getType(orderType));
+                    segmentData = analysisTask.segmentRankList(Util.dealCubeIds(cubeIds), count, OrderType.getType(orderType));
                 }
                 leekResponse = LeekResponse.generateResponse(segmentData);
                 break;

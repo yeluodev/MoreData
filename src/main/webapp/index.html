@@ -20,12 +20,6 @@
             opacity: 1
         }
 
-        .head {
-            padding: 0 32px;
-            border-radius: 0;
-            margin-bottom: 0;
-        }
-
         .flex {
             display: flex;
             align-items: center;
@@ -34,19 +28,6 @@
 
         h6 {
             margin: auto 32px auto 0;
-        }
-
-        .sub-head {
-            width: 100%;
-            background-color: rgba(52, 73, 94, 0.95);
-            padding-bottom: 36px;
-        }
-
-        .description {
-            color: whitesmoke;
-            font-size: 16px;
-            padding: 24px 36px;
-            line-height: 28px;
         }
 
         .float-bar {
@@ -238,7 +219,6 @@
         let accountRankDataArr = [];
         let rankPage = 1;
         let rankMaxPage = 1;
-        let searchReq;
 
         let headKeys = [[],
             ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
@@ -256,18 +236,6 @@
         let chartMode = !1;
         let typeNameArr = ['', 'stock', 'segment', 'rebalancing', 'cube'];
 
-        function setIframeHeight(iframe) {
-            if (iframe) {
-                var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
-                console.log('height=' + iframe.height);
-                if (iframeWin.document.body) {
-                    console.log('height=' + iframe.height);
-                    iframe.height = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
-                }
-                console.log('height=' + iframe.height);
-            }
-        };
-
         $(function () {
             $('body').addClass('bactive');
 
@@ -280,49 +248,6 @@
                     iframe.style.visibility = 'visible';
                 }, 0);
             };
-
-            // let top = $('nav')[0].height;
-            // let width = $('.navbar-form').width();
-            // let left = $('.navbar-form').offset().left;
-            // console.log(top + '--' + width + '--' + left);
-            // $("#autoSearch").css('top', top);
-            // $("#autoSearch").css('width', width);
-            // $("#autoSearch").css('left', left);
-            // $('#navbarInput-01').on('keyup', function () {
-            //     let key = $('#navbarInput-01').val();
-            //     console.log(key);
-            //     if(searchReq!=null){
-            //         searchReq.abort();
-            //     }
-            //     if (key === "") {    　　　　　　　　  //无输入
-            //         $("#autoSearch").css('display', 'none');    //隐藏列表框
-            //         return;
-            //     }
-            //
-            //     searchReq = $.ajax({
-            //         url: "http://localhost:8080/cube/search?key=" + key,
-            //         success: function (data) {
-            //             console.log(data);
-            //             $("#showResult").empty();
-            //             let cubeList = data.data.list;
-            //             cubeList.forEach(function (item) {
-            //                 //生成列表元素,并添加鼠标悬浮事件(高亮):hover
-            //                 //TODO 样式真尼玛难调
-            //                 var $li = $("<li onclick='getChoose(this)' style='width: " + width + "px;'>" + item.name + "</li>").hover(function () {
-            //                     $("li").removeClass("active");　　　　　//bootstrap　　　
-            //                     $(this).addClass("active");
-            //                 });
-            //
-            //                 $("#showResult").append($li);   　//添加列表
-            //                 $("#autoSearch").show();　　　　　 //显示列表框
-            //                 $("#autoSearch").css('display', 'block');
-            //
-            //             });
-            //         }
-            //     });
-            //
-            // });
-
 
             $('#track-cube').on('click', function () {
                 fetchTrackCube(level);

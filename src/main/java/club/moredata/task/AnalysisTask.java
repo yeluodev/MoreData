@@ -651,7 +651,7 @@ public class AnalysisTask {
             leekResult = new LeekResult<>();
             leekResult.setCash(cash);
             leekResult.setCount(alsStockList.size());
-            leekResult.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(System.currentTimeMillis()));
+            leekResult.setUpdatedAt(DateUtil.getInstance().getTimeNow());
             leekResult.setList(alsStockList);
 
         } catch (SQLException e) {
@@ -717,7 +717,7 @@ public class AnalysisTask {
             leekResult = new LeekResult<>();
             leekResult.setCash(cash);
             leekResult.setCount(alsSegmentList.size());
-            leekResult.setUpdatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(System.currentTimeMillis()));
+            leekResult.setUpdatedAt(DateUtil.getInstance().getTimeNow());
             leekResult.setList(alsSegmentList);
 
         } catch (SQLException e) {

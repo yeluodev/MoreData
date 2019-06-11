@@ -11,6 +11,7 @@ import club.moredata.model.RebStock;
 import club.moredata.task.AutoTask;
 import club.moredata.task.CubeTask;
 import club.moredata.util.DateUtil;
+import club.moredata.util.Util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.PropertyFilter;
 
@@ -35,7 +36,7 @@ public class CubeServlet extends BaseServlet {
     private Pattern suspensionPattern = Pattern.compile("[01]");
     private Pattern cashPattern = Pattern.compile("[01]");
     private Pattern orderPattern = Pattern.compile("[1-4]");
-    private Pattern cubeIdsPattern = Pattern.compile("^(([1-9]\\d*[,])*[1-9]\\d*)$");
+    private Pattern cubeIdsPattern = Pattern.compile("^(((ZH)?[1-9]\\d*[,])*(ZH)?[1-9]\\d*)$");
 
     private Pattern paramKeyPattern = Pattern.compile("code|message|data|id|status|cube_id|error_status" +
             "|error_code|error_message|error_message|comment");
@@ -143,10 +144,14 @@ public class CubeServlet extends BaseServlet {
                 }
                 break;
             case "list":
-                CubeTask task = new CubeTask();
-                LeekResult<Cube> cubeLeekResult = task.fetchCubeList(cubeIds);
-                leekResponse = LeekResponse.successResponse(cubeLeekResult);
-                propertyFilter = (object, name, value) -> !"cash".equals(name);
+                if(cubeIds==null){
+                    leekResponse = LeekResponse.errorParameterResponse();
+                }else {
+                    CubeTask task = new CubeTask();
+                    LeekResult<Cube> cubeLeekResult = task.fetchCubeList(Util.dealCubeIds(cubeIds));
+                    leekResponse = LeekResponse.successResponse(cubeLeekResult);
+                    propertyFilter = (object, name, value) -> !"cash".equals(name);
+                }
                 break;
             default:
                 leekResponse = LeekResponse.errorURLResponse();
