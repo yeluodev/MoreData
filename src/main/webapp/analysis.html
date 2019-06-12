@@ -279,8 +279,10 @@
 
             $('#complete').on('click', function () {
                 cubeIds = $('input[name="tagsinput"].tagsinput').val();
+                console.log(cubeIds);
                 $.ajax({
-                    url: 'http://118.25.182.189/moredata/cube/list?cubeIds=' + cubeIds,
+                    url: 'http://localhost:8080/cube/list?cubeIds=' + cubeIds,
+                    // url: 'http://118.25.182.189/moredata/cube/list?cubeIds=' + cubeIds,
                     dataType: "json",
                     success: function (data) {
                         console.log(data);
@@ -487,23 +489,91 @@
                     $('#cube-list').html('<div>输入的组合ID可能有误</div>');
                     return;
                 }
+
                 let data = cubeData.data;
                 let list = data.list;
-                let html = '';
 
+                let html = '';
+                html += '<div class="flex">';
+                html += '<a id="result-title" href="javascript:void(0);" style="margin: 12px 0;">';
+                html += '你要分析的组合如下：';
+                html += '<div class="bottom-line"></div>';
+                html += '</a>';
+                html += '</div>';
+                html += '<div class="hr"></div>';
+                html += '<div id="cube-list" class="flex">';
+                html += generateCubeCardList(list,true,null);
+                html += '</div>';
+
+                $('#cube-container').empty().append(html);
+
+                if(data.count < cubeIds.split(',').length){
+                    $('#result-title').text('你要进行分析的组合如下，另还有'+(cubeIds.split(',').length-data.count)+'条未在库中找到');
+
+                    let searchResultList = data['searchResult'];
+                    let searchHtml = '';
+                    searchResultList.forEach(function (searchResult) {
+                        // searchHtml += '<div class="card" id="cube-container" style="display: block;background-color: transparent;box-shadow: none;">';
+                        searchHtml += '<div class="flex">';
+                        searchHtml += '<a href="javascript:void(0);" style="margin: 12px 0;">';
+                        searchHtml += '为你找到'+searchResult['q']+'的'+searchResult['list'].length+'条结果,点击你要选择的组合以添加入库';
+                        searchHtml += '<div class="bottom-line"></div>';
+                        searchHtml += '</a>';
+                        searchHtml += '</div>';
+                        searchHtml += '<div class="hr"></div>';
+                        searchHtml += '<div id="cube-list" class="flex">';
+                        searchHtml += generateCubeCardList(searchResult['list'],false,searchResult['q']);
+                        searchHtml += '</div>';
+                        // searchHtml += '</div>';
+                    });
+
+                    $('#cube-container').append(searchHtml);
+
+                }
+            }
+
+            function generateCubeCardList(list,isDbCube,tag) {
+                let html = '';
                 list.forEach(function (cube) {
-                    html += '<a class="cube" target="_blank" href="https://xueqiu.com/P/' + cube['symbol'] + '">';
+                    if(isDbCube){
+                        html += '<a class="cube" target="_blank" href="https://xueqiu.com/P/' + cube['symbol'] + '">';
+                    }else {
+                        html += '<a class="cube" href="javascript:modifyTag(\''+tag+'\',\''+cube['symbol']+'\');">';
+                    }
                     html += '<div><h5>' + cube['name'] + ' ' + cube['symbol'] + '</h5></div>';
-                    html += '<div style="flex: 1;font-size: 16px;padding: 4px 8px;">' + cube['description'] + '</div>';
+                    html += '<div style="flex: 1;font-size: 16px;padding: 4px 8px;overflow: hidden;">' + cube['description'] + '</div>';
                     html += '<div class="flex">';
                     html += '<div style="flex:1;"><h4 style="font-weight: 900;">' + cube['netValue'] + '</h4></div>';
                     html += '<img src="//xavatar.imedao.com/community/20183/1523249099664-1523249099851.jpg!50x50.png" class="avatar">';
                     html += '<div style="margin: 0 0 0 12px;">' + cube['owner']['screenName'] + '</div>';
                     html += '</div></a>';
                 });
-                $('#cube-list').html(html);
+                return html;
             }
+
         });
+
+        //点击的时候应当更新组合到数据库
+        function modifyTag(tag,symbol) {
+
+            //TODO 请求接口将点击的组合入库
+            //步骤：发起请求入库->弹框提示正在入库，请稍后再进行分析->提醒用户删除tag,输入复制好的组合ID->再次点击分析->得到完整结果
+
+            let oInput = document.createElement('input');
+            oInput.value = symbol;
+            document.body.appendChild(oInput);
+            oInput.select(); // 选择对象
+            document.execCommand("Copy"); // 执行浏览器复制命令
+            oInput.className = 'oInput';
+            oInput.style.display='none';
+            alert(symbol+'已复制到剪贴板，请删除'+tag+'后，粘贴到输入框，进行分析');
+            //改变value值无效果
+            //TODO 如何更新tagsinput中的内容
+            //考虑改变操作逻辑
+            // $('input[name="tagsinput"].tagsinput').val(cubeIds);
+
+
+        }
 
         /**
          * 请求接口数据
@@ -564,17 +634,17 @@
 
 <div class="tagsinput-primary search-bar" style="position:relative;z-index:100;">
     <a id="complete" class="btn" style="margin: auto 0 auto 36px;" href="#fakelink">选择完毕，进行分析</a>
-    <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="1377622,975830,1257775,1365638,1423409"/>
+    <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="1377622,1423409"/>
 </div>
 
 <div class="card" id="cube-container" style="display: none;background-color: transparent;box-shadow: none;">
-    <div class="flex">
-        <a href="javascript:void(0);" style="margin: 12px 0;">你要添加分析的组合如下:
-            <div class="bottom-line"></div>
-        </a>
-    </div>
-    <div class="hr"></div>
-    <div id="cube-list" class="flex"></div>
+    <!--<div class="flex">-->
+        <!--<a id="result-title" href="javascript:void(0);" style="margin: 12px 0;">你要进行分析的已入库组合如下:-->
+            <!--<div class="bottom-line"></div>-->
+        <!--</a>-->
+    <!--</div>-->
+    <!--<div class="hr"></div>-->
+    <!--<div id="cube-list" class="flex"></div>-->
 </div>
 
 <div class="card" id="result-container" style="display: none;">

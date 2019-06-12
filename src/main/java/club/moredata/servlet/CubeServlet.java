@@ -7,6 +7,7 @@ import club.moredata.entity.Rebalancing;
 import club.moredata.entity.SearchResult;
 import club.moredata.model.LeekResponse;
 import club.moredata.model.LeekResult;
+import club.moredata.model.LeekSearchResult;
 import club.moredata.model.RebStock;
 import club.moredata.task.AutoTask;
 import club.moredata.task.CubeTask;
@@ -21,6 +22,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -90,7 +94,7 @@ public class CubeServlet extends BaseServlet {
             key = "";
         }
 
-        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ", "")).matches()) {
+        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds = cubeIds.replaceAll(" ", "")).matches()) {
             leekResponse = LeekResponse.errorParameterResponse();
             out.print(JSON.toJSONString(leekResponse));
             return;
@@ -157,7 +161,31 @@ public class CubeServlet extends BaseServlet {
                 } else {
                     CubeTask task = new CubeTask();
                     LeekResult<Cube> cubeLeekResult = task.fetchCubeList(Util.dealCubeIds(cubeIds));
-                    leekResponse = LeekResponse.successResponse(cubeLeekResult);
+                    List<String> cubeIdList = Arrays.asList(cubeIds.split(","));
+                    List<String> copyList = new ArrayList<>(cubeIdList);
+                    cubeLeekResult.getList().forEach(cube -> {
+                        if(copyList.contains(cube.getSymbol()) || copyList.contains(String.valueOf(cube.getId()))){
+                            copyList.remove(cube.getSymbol());
+                            copyList.remove(String.valueOf(cube.getId()));
+                        }
+                    });
+//                    StringBuilder builder = new StringBuilder();
+//                    copyList.forEach(id -> builder.append(id).append(","));
+
+                    List<SearchResult<Cube>> searchResultList = new ArrayList<>();
+                    copyList.forEach(id -> {
+                        SearchResult<Cube> searchRes = ApiManager.getInstance().searchCube(id);
+                        searchResultList.add(searchRes);
+                    });
+
+                    LeekSearchResult<Cube> result = new LeekSearchResult<>();
+                    result.setCash(cubeLeekResult.getCash());
+                    result.setCount(cubeLeekResult.getCount());
+                    result.setList(cubeLeekResult.getList());
+                    result.setUpdatedAt(cubeLeekResult.getUpdatedAt());
+                    result.setSearchResult(searchResultList);
+
+                    leekResponse = LeekResponse.successResponse(result);
                     propertyFilter = (object, name, value) -> !"cash".equals(name);
                 }
                 break;
