@@ -42,8 +42,9 @@ public class CubeTask {
      */
     public void updatePendingList() {
         List<Cube> cubes = fetchCubeList();
-        RedisTask task = new RedisTask();
-        task.insertCubeToPendingList(cubes);
+        Jedis jedis = RedisUtil.getJedis();
+        cubes.forEach(cube -> jedis.sadd("pendingCube",cube.getSymbol()));
+        jedis.close();
     }
 
     public void updateCubeDetail() {
@@ -53,7 +54,8 @@ public class CubeTask {
             return;
         }
         Jedis redis = RedisUtil.getJedis();
-        String symbol = redis.brpoplpush("pending", "fetching", 3000);
+        String symbol = redis.srandmember("pendingCube");
+        redis.smove("pendingCube","fetchingCube",symbol);
         redis.close();
         reqCount++;
         ApiManager.getInstance().fetchCubeDetail(symbol, new ApiCallback() {
@@ -94,8 +96,7 @@ public class CubeTask {
                     }
                 }
                 Jedis redis = RedisUtil.getJedis();
-                redis.lrem("fetching", 1, symbol);
-                redis.lpush("success", symbol);
+                redis.smove("fetchingCube","successCube",symbol);
                 redis.close();
                 updateCubeDetail();
 
@@ -104,8 +105,7 @@ public class CubeTask {
             @Override
             public void onError(String response) {
                 Jedis redis = RedisUtil.getJedis();
-                redis.lrem("fetching", 1, symbol);
-                redis.lpush("fail", symbol);
+                redis.smove("fetchingCube","failCube",symbol);
                 redis.close();
                 updateCubeDetail();
             }
@@ -123,7 +123,7 @@ public class CubeTask {
         try {
             connection = DBPoolConnection.getInstance().getConnection();
             //组合更新时间距当前时间超出6小时以上，添加入待更新队列
-            String sql = "SELECT * FROM `cube` WHERE TIMESTAMPDIFF(SECOND,`latest_updated_at`,NOW()) > 6 ORDER BY " +
+            String sql = "SELECT * FROM `cube` WHERE TIMESTAMPDIFF(HOUR,`latest_updated_at`,NOW()) > 6 ORDER BY " +
                     "`latest_updated_at` ASC;";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();

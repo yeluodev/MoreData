@@ -9,12 +9,6 @@
         数据表下载                           Done
         粉丝值排行/发言数排行                 Done
         自定义配置---任选雪球组合进行分析        Done
-            用户输入组合关键词进行搜索，选择需要分析的组合添加，后台去抓取组合数据
-            添加多个组合后，汇总持仓情况
-            个股持仓sql
-                SELECT substring_index(group_concat(stock_name order by _id DESC),',',1) as stock_name,stock_id,stock_symbol,segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY stock_id ORDER BY weight DESC,count DESC;
-            板块持仓sql
-                SELECT segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_id ORDER BY weight DESC,count DESC;
 
     1.0.2
         爬取雪球所有组合数据

@@ -1,0 +1,40 @@
+版本开发计划
+    1.0.0
+        风云榜组合数据展示---个股/板块/调仓/在榜天数
+        雪球网用户分析---性别/地区/活跃度/粉丝值
+
+    1.0.1
+        生成组合                            Done
+        链接跳转---用户/组合                  Done
+        数据表下载                           Done
+        粉丝值排行/发言数排行                 Done
+        自定义配置---任选雪球组合进行分析        Done
+            用户输入组合关键词进行搜索，选择需要分析的组合添加，后台去抓取组合数据
+            添加多个组合后，汇总持仓情况
+            个股持仓sql
+                SELECT substring_index(group_concat(stock_name order by _id DESC),',',1) as stock_name,stock_id,stock_symbol,segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY stock_id ORDER BY weight DESC,count DESC;
+            板块持仓sql
+                SELECT segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_id ORDER BY weight DESC,count DESC;
+
+    1.0.2
+        爬取雪球所有组合数据
+        全部调仓历史（当前只抓取第一页，会丢失部分，则不能分析指定日期的调仓情况）
+            调仓类型参数-"category": "user_rebalancing","exe_strategy": "intraday_all",
+        如何获取组合的历史持仓
+            show.json
+            非交易时段调仓,view_rebalancing变化
+                status:pending->success
+                holdings永远都是当前的持仓情况,所以应该无法抓取历史持仓情况
+                    接口返回数据中部分字段暂时不清楚意义，若接口无法直接返回，应该可以通过计算来得出组合持仓历史
+                    算法后面思考完善
+
+
+    ......
+
+
+    1.1.0
+        改变比重计算逻辑
+            1.0.x版本是以组合的百分比直接进行计算，而各组合的净值是有所不同的
+            净值5的组合和净值2的组合个股比重均为20%，应以实际净值*百分比计算
+            同一组合对个股比重进行调整时，相同比重实际效果应该也是不一样的，上午先卖出20%下午再买入20%，净值大多数情况下是有所区别的
+        ......

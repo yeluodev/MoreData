@@ -43,6 +43,10 @@ public class CrontabServlet extends BaseServlet {
                 UpdateTask.getInstance().resetUpdateTask();
                 leekResponse = LeekResponse.successResponse(null);
                 break;
+            case "cube/pending":
+                UpdateTask.getInstance().refreshPendingList();
+                leekResponse = LeekResponse.successResponse(null);
+                break;
             default:
                 leekResponse = LeekResponse.errorURLResponse();
                 break;

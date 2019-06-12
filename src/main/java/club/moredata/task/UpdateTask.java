@@ -47,4 +47,12 @@ public class UpdateTask {
         task.updatePendingList();
     }
 
+    /**
+     * 对需要更新组合的任务队列进行刷新
+     */
+    public void refreshPendingList() {
+        CubeTask task = new CubeTask();
+        task.updatePendingList();
+    }
+
 }
