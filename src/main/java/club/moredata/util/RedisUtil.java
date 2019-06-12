@@ -15,6 +15,7 @@ public class RedisUtil {
 
     static {
         JedisPoolConfig config = new JedisPoolConfig();
+        //Redis最大连接数300，数据操作完成后应及时放回Redis池内
         config.setMaxTotal(300);
         config.setMaxIdle(300);
         config.setMaxWaitMillis(100000L);

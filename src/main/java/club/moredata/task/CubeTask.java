@@ -47,15 +47,9 @@ public class CubeTask {
     }
 
     public void updateCubeDetail() {
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
         //请求太频繁接口报错
         if (reqCount > 15) {
             //System.exit(0)会导致Tomcat服务器停止
-//            System.exit(0);
             return;
         }
         Jedis redis = RedisUtil.getJedis();
@@ -102,6 +96,7 @@ public class CubeTask {
                 Jedis redis = RedisUtil.getJedis();
                 redis.lrem("fetching", 1, symbol);
                 redis.lpush("success", symbol);
+                redis.close();
                 updateCubeDetail();
 
             }

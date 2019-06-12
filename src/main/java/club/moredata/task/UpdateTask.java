@@ -41,6 +41,7 @@ public class UpdateTask {
     public void resetUpdateTask() {
         Jedis redis = RedisUtil.getJedis();
         redis.flushDB();
+        redis.close();
 
         CubeTask task = new CubeTask();
         task.updatePendingList();
