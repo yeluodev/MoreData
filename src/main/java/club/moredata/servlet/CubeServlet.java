@@ -53,7 +53,7 @@ public class CubeServlet extends BaseServlet {
         }
 
         String matchPath = request.getHttpServletMapping().getMatchValue();
-        if(matchPath==null){
+        if (matchPath == null) {
             leekResponse = LeekResponse.errorURLResponse();
             out.print(JSON.toJSONString(leekResponse));
             return;
@@ -90,7 +90,7 @@ public class CubeServlet extends BaseServlet {
             key = "";
         }
 
-        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ","")).matches()) {
+        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ", "")).matches()) {
             leekResponse = LeekResponse.errorParameterResponse();
             out.print(JSON.toJSONString(leekResponse));
             return;
@@ -127,26 +127,34 @@ public class CubeServlet extends BaseServlet {
                 propertyFilter = (object, name, value) -> paramKeyPattern.matcher(name).matches();
                 break;
             case "track":
-                LeekResult<RebStock> leekResult = autoTask.trackCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
-                        cashInt == 0, OrderType.getType(orderType));
-                if(leekResult==null){
+                LeekResult<RebStock> leekResult;
+                if (cubeIds == null) {
+                    leekResult = autoTask.trackCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
+                            cashInt == 0, OrderType.getType(orderType));
+                } else {
+                    int count = cubeIds.split(",").length;
+                    leekResult = autoTask.trackCube(Util.dealCubeIds(cubeIds), count, stockLimitInt,
+                            suspensionInt == 0,
+                            cashInt == 0, OrderType.getType(orderType));
+                }
+                if (leekResult == null) {
                     leekResponse = LeekResponse.errorDatabaseResponse();
-                }else {
+                } else {
                     leekResponse = LeekResponse.successResponse(leekResult);
                 }
                 break;
             case "search":
                 SearchResult<Cube> searchResult = ApiManager.getInstance().searchCube(key);
-                if(searchResult==null){
+                if (searchResult == null) {
                     leekResponse = LeekResponse.errorOtherResponse();
-                }else {
+                } else {
                     leekResponse = LeekResponse.successResponse(searchResult);
                 }
                 break;
             case "list":
-                if(cubeIds==null){
+                if (cubeIds == null) {
                     leekResponse = LeekResponse.errorParameterResponse();
-                }else {
+                } else {
                     CubeTask task = new CubeTask();
                     LeekResult<Cube> cubeLeekResult = task.fetchCubeList(Util.dealCubeIds(cubeIds));
                     leekResponse = LeekResponse.successResponse(cubeLeekResult);

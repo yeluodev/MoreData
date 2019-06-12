@@ -132,8 +132,15 @@ public class AnalysisServlet extends HttpServlet {
                 leekResponse = LeekResponse.generateResponse(segmentData);
                 break;
             case "3":
-                LeekResult<AlsRebalancing> rebalancingData = analysisTask.rebalancingRankList(levelInt, cubeLimitInt,
-                        stockLimitInt, OrderType.getType(orderType), RebalancingType.getType(rebalancingType));
+                LeekResult<AlsRebalancing> rebalancingData;
+                if (cubeIds == null) {
+                    rebalancingData = analysisTask.rebalancingRankList(levelInt, cubeLimitInt,
+                            stockLimitInt, OrderType.getType(orderType), RebalancingType.getType(rebalancingType));
+                } else {
+                    int count = cubeIds.split(",").length;
+                    rebalancingData = analysisTask.rebalancingRankList(Util.dealCubeIds(cubeIds), count, OrderType.getType(orderType),
+                            RebalancingType.getType(rebalancingType));
+                }
                 leekResponse = LeekResponse.generateResponse(rebalancingData);
                 break;
             case "4":

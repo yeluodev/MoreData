@@ -7,9 +7,11 @@ import club.moredata.entity.*;
 import club.moredata.model.LeekResult;
 import club.moredata.util.DBPoolConnection;
 import club.moredata.util.DateUtil;
+import club.moredata.util.RedisUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import okhttp3.Response;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -26,11 +28,129 @@ import java.util.List;
  */
 public class CubeTask {
 
+    private int reqCount = 0;
+
     public static void main(String[] args) {
         CubeTask task = new CubeTask();
 //        task.fetchCubeRankListAndInsert2DB();
-        task.fetchCubeDetailAndInsert2DB();
+//        task.fetchCubeDetailAndInsert2DB();
 //        task.fetchRebalancingHistory(1356626);
+    }
+
+    /**
+     * 将所有组合插入Redis待更新队列
+     */
+    public void updatePendingList() {
+        List<Cube> cubes = fetchCubeList();
+        RedisTask task = new RedisTask();
+        task.insertCubeToPendingList(cubes);
+    }
+
+    public void updateCubeDetail() {
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+        //请求太频繁接口报错
+        if (reqCount > 15) {
+            //System.exit(0)会导致Tomcat服务器停止
+//            System.exit(0);
+            return;
+        }
+        Jedis redis = RedisUtil.getJedis();
+        String symbol = redis.brpoplpush("pending", "fetching", 3000);
+        redis.close();
+        reqCount++;
+        ApiManager.getInstance().fetchCubeDetail(symbol, new ApiCallback() {
+            @Override
+            public void onSuccess(String response) {
+                Gson gson = new Gson();
+                Cube cube = gson.fromJson(response, Cube.class);
+                Connection connection = null;
+                try {
+                    connection = DBPoolConnection.getInstance().getConnection();
+                    //关闭外键约束
+                    connection.prepareStatement(SQLBuilder.buildForeignKeyCheck(false)).execute();
+                    connection.setAutoCommit(false);
+                    insertRebalancing(connection, cube.getViewRebalancing());
+                    insertHoldings(connection, cube.getViewRebalancing());
+                    fetchRebalancingHistory(cube.getId());
+                    insertCube(connection, cube);
+                    //关闭外键约束
+                    connection.prepareStatement(SQLBuilder.buildForeignKeyCheck(true)).execute();
+                    connection.commit();
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    try {
+                        if (null != connection) {
+                            connection.rollback();
+                        }
+                    } catch (SQLException sqlException) {
+                        sqlException.printStackTrace();
+                    }
+                } finally {
+                    try {
+                        if (null != connection) {
+                            connection.close();
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Jedis redis = RedisUtil.getJedis();
+                redis.lrem("fetching", 1, symbol);
+                redis.lpush("success", symbol);
+                updateCubeDetail();
+
+            }
+
+            @Override
+            public void onError(String response) {
+                Jedis redis = RedisUtil.getJedis();
+                redis.lrem("fetching", 1, symbol);
+                redis.lpush("fail", symbol);
+                redis.close();
+                updateCubeDetail();
+            }
+        });
+    }
+
+    /**
+     * 获取所有组合
+     *
+     * @return
+     */
+    private List<Cube> fetchCubeList() {
+        Connection connection = null;
+        List<Cube> cubeList = new ArrayList<>();
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            //组合更新时间距当前时间超出6小时以上，添加入待更新队列
+            String sql = "SELECT * FROM `cube` WHERE TIMESTAMPDIFF(SECOND,`latest_updated_at`,NOW()) > 6 ORDER BY " +
+                    "`latest_updated_at` ASC;";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                Cube cube = new Cube();
+                cube.setSymbol(resultSet.getString(4));
+                cube.setId(resultSet.getInt(2));
+                cubeList.add(cube);
+            }
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return cubeList;
     }
 
     /**
@@ -173,8 +293,7 @@ public class CubeTask {
     private void fetchRebalancingHistory(int cubeId) {
         ApiManager.getInstance().fetchRebalancingHistory(cubeId, new ApiCallback() {
             @Override
-            public void onResponse(String response) {
-                System.out.println(response);
+            public void onSuccess(String response) {
                 Gson gson = new Gson();
                 SnowBallListResult<Rebalancing> result = gson.fromJson(response,
                         new TypeToken<SnowBallListResult<Rebalancing>>() {
@@ -325,6 +444,7 @@ public class CubeTask {
             insertCubePs.setDouble(14, cube.getRankPercent());
             insertCubePs.setString(15, cube.getTag() == null ? "" : cube.getTag().toString());
             insertCubePs.setInt(16, cube.getViewRebalancing().getId());
+            insertCubePs.setLong(17, cube.getClosedAt());
 
             insertCubePs.execute();
             insertCubePs.close();
@@ -341,7 +461,7 @@ public class CubeTask {
         for (Cube dbCube : cubeList) {
             ApiManager.getInstance().fetchCubeDetail(dbCube.getSymbol(), new ApiCallback() {
                 @Override
-                public void onResponse(String response) {
+                public void onSuccess(String response) {
                     System.out.println(response);
                     Gson gson = new Gson();
                     Cube cube = gson.fromJson(response, Cube.class);
@@ -360,30 +480,9 @@ public class CubeTask {
                         updateRankCubesPs.execute();
                         updateRankCubesPs.close();
 
-
-                        //查询组合的持仓是否已插入表中
-                        PreparedStatement queryRebalancingPs =
-                                connection.prepareStatement(SQLBuilder.buildRebalancingQuery());
-                        queryRebalancingPs.setInt(1, cube.getViewRebalancing().getId());
-                        ResultSet rebalancingResultSet = queryRebalancingPs.executeQuery();
-                        if (rebalancingResultSet.next()) {
-                            System.out.println("已插入");
-                            PreparedStatement queryHistoryPs =
-                                    connection.prepareStatement(SQLBuilder.buildRebalancingHistoryQuery());
-                            queryHistoryPs.setInt(1, cube.getViewRebalancing().getId());
-                            ResultSet historyResultSet = queryHistoryPs.executeQuery();
-                            if (!historyResultSet.next()) {
-                                fetchRebalancingHistory(cube.getId());
-                            }
-                        } else {
-                            System.out.println("未插入");
-                            insertRebalancing(connection, cube.getViewRebalancing());
-                            insertHoldings(connection, cube.getViewRebalancing());
-
-                            fetchRebalancingHistory(cube.getId());
-                        }
-                        queryRebalancingPs.close();
-
+                        insertRebalancing(connection, cube.getViewRebalancing());
+                        insertHoldings(connection, cube.getViewRebalancing());
+                        fetchRebalancingHistory(cube.getId());
                         insertCube(connection, cube);
                         //关闭外键约束
                         connection.prepareStatement(SQLBuilder.buildForeignKeyCheck(true)).execute();

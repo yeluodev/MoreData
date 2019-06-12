@@ -67,7 +67,7 @@ public class AnalysisTask {
 //        task.getLatestUpdateTime(1, 30);
 //        task.snowballCubeList(1);
         LeekResult result = task.stockRankList("1773085, 1359749, 1392200, 52627, 1423409, 1387791",6,
-                6 * 30, false, OrderType.WEIGHT_DESC);
+                34, false, OrderType.WEIGHT_DESC);
         System.out.println(JSON.toJSONString(result));
     }
 
@@ -623,10 +623,13 @@ public class AnalysisTask {
             }
             cash = Arith.mul(Arith.sub(1, Arith.div(totalWeight, cubeSize * 100.0, 8)), 100);
             stockIdQueryPs.close();
+            //是否移除停牌个股
             suspensionIds = removeSuspensionStock ? fetchQuotep(stockIdList, stockLimit) : "";
 
             PreparedStatement leekStockPs =
-                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeStockRankQuery(cubeIds, suspensionIds));
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeStockRankQuery(cubeIds, suspensionIds,orderType));
+            leekStockPs.setInt(1,stockLimit);
+            leekStockPs.setInt(2,stockLimit);
             ResultSet resultSet = leekStockPs.executeQuery();
             int rank = 0;
             List<AlsStock> alsStockList = new ArrayList<>();
@@ -721,6 +724,62 @@ public class AnalysisTask {
             leekResult.setList(alsSegmentList);
 
         } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return leekResult;
+    }
+
+    /**
+     * 组合调仓排行
+     *
+     * @param cubeIds
+     * @param cubeSize
+     * @param orderType
+     * @param rebalancingType
+     * @return
+     */
+    public LeekResult<AlsRebalancing> rebalancingRankList(String cubeIds,int cubeSize,OrderType orderType,
+                                                          RebalancingType rebalancingType) {
+        String diaplayDate = DateUtil.getInstance().transactionDataDate(System.currentTimeMillis());
+        Connection connection = null;
+        LeekResult<AlsRebalancing> leekResult = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+
+            Date date = new SimpleDateFormat("yyyyMMdd").parse(diaplayDate);
+            long startTimestamp = DateUtil.getInstance().getDayStartTimestamp(date);
+            long endTimestamp = DateUtil.getInstance().getDayEndTimestamp(date);
+            PreparedStatement rebalancingPs = connection.prepareStatement(SQLBuilder.buildSpecifiedCubeRebalancingRankQuery(cubeIds,orderType, rebalancingType));
+            rebalancingPs.setLong(1, startTimestamp);
+            rebalancingPs.setLong(2, endTimestamp);
+            ResultSet resultSet = rebalancingPs.executeQuery();
+            int rank = 0;
+            List<AlsRebalancing> alsRebalancingList = new ArrayList<>();
+            while (resultSet.next()) {
+                rank++;
+                AlsRebalancing alsRebalancing = new AlsRebalancing();
+                alsRebalancing.setRank(rank);
+                alsRebalancing.setStockName(resultSet.getString(1));
+                alsRebalancing.setStockSymbol(resultSet.getString(2));
+                alsRebalancing.setChangWeight(resultSet.getDouble(3));
+                alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeSize * 100.0, 8));
+                alsRebalancingList.add(alsRebalancing);
+            }
+            rebalancingPs.close();
+
+            leekResult = new LeekResult<>();
+            leekResult.setCount(alsRebalancingList.size());
+            leekResult.setUpdatedAt(DateUtil.getInstance().getTimeNow());
+            leekResult.setList(alsRebalancingList);
+        } catch (SQLException | ParseException e) {
             e.printStackTrace();
         } finally {
             try {

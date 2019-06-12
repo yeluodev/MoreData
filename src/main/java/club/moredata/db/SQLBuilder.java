@@ -45,7 +45,8 @@ public class SQLBuilder {
      */
     public static String buildCubeDetailInsert() {
         return "REPLACE INTO `cube` (`id`, `name`, `symbol`, `description`, `owner_id`, `follower_count`, " +
-                "`active_flag`, `created_at`, `updated_at`, `daily_gain`, `monthly_gain`, `total_gain`, `net_value`, `rank_percent`, `tag`, `view_rebalancing`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                "`active_flag`, `created_at`, `updated_at`, `daily_gain`, `monthly_gain`, `total_gain`, `net_value`, " +
+                "`rank_percent`, `tag`, `view_rebalancing`,`closed_at`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     }
 
     /**
@@ -101,9 +102,12 @@ public class SQLBuilder {
      * @return
      */
     public static String buildRebalancingInsert() {
-        return "INSERT IGNORE INTO `view_rebalancing`(`id`,`status`,`cube_id`,`prev_bebalancing_id`,`created_at`," +
+        return "INSERT INTO `view_rebalancing`(`id`,`status`,`cube_id`,`prev_bebalancing_id`,`created_at`," +
                 "`updated_at`," +
-                "`cash_value`,`cash`,`error_code`,`error_message`,`error_status`) VALUES(?,?,?,?,?,?,?,?,?,?,?);";
+                "`cash_value`,`cash`,`error_code`,`error_message`,`error_status`) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON " +
+                "DUPLICATE KEY UPDATE `status` = VALUES(`status`),`prev_bebalancing_id` = VALUES(`prev_bebalancing_id`),`created_at` = VALUES" +
+                "(`created_at`),`updated_at` = VALUES(`updated_at`),`cash_value` = VALUES(`cash_value`),`cash` = VALUES(`cash`)," +
+                "`error_code` = VALUES(`error_code`),`error_message` = VALUES(`error_message`),`error_status` = VALUES(`error_status`);";
     }
 
     /**
@@ -125,7 +129,8 @@ public class SQLBuilder {
      */
     public static String buildHoldingsInsert() {
         return "INSERT INTO `holdings`(`view_rebalancing_id`, `stock_id`, `weight`, `segment_name`, `segment_id`, " +
-                "`stock_name`, `stock_symbol`, `segment_color`, `proactive`, `volume`) VALUES(?,?,?,?,?,?,?,?,?,?);";
+                "`stock_name`, `stock_symbol`, `segment_color`, `proactive`, `volume`) VALUES(?,?,?,?,?,?,?,?,?,?) ON" +
+                " DUPLICATE KEY UPDATE `weight` = VALUES(`weight`),`proactive` = VALUES(`proactive`),`volume` = VALUES(`volume`);";
     }
 
     /**
@@ -478,16 +483,21 @@ public class SQLBuilder {
      *
      * @return
      */
-    public static String buildSpecifiedCubeStockRankQuery(String ids, String suspensionIds) {
-        String sql = "SELECT substring_index(group_concat(stock_name order by _id DESC),',',1) as stock_name," +
-                "stock_id,stock_symbol,segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE " +
-                "(`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id` %s) AS temp )," +
-                "6) " +
-                "AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`" +
-                ".`view_rebalancing` = `holdings`.`view_rebalancing_id` %s) AS temp GROUP BY stock_id ORDER BY weight" +
-                " DESC,count DESC;";
+    public static String buildSpecifiedCubeStockRankQuery(String ids, String suspensionIds, OrderType orderType) {
+        String sql = "SELECT substring_index(group_concat(stock_name order by _id DESC),',',1) as stock_name,stock_id,stock_symbol," +
+                "       segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT" +
+                "                                                                                                    " +
+                "             `weight` FROM (SELECT COUNT(*) AS `count`,ROUND(SUM(CAST(`weight` AS DECIMAL(8,2))),2) " +
+                "AS weight FROM (SELECT SUM(CAST(`holdings`.`weight` as DECIMAL(8,2))) AS `weight`,COUNT(*) AS " +
+                "`count` FROM `cube`,`holdings` WHERE (`cube`.`id` IN(%s) OR `cube`.`symbol` IN(%s)) AND `cube`" +
+                ".`view_rebalancing` = `holdings`.`view_rebalancing_id` %s GROUP BY `stock_id` %s LIMIT ?) AS `temp` " +
+                ") AS `temp`),6) AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE (`cube`.`id` IN " +
+                "(%s) OR `cube`.`symbol` IN (%s)) AND `cube`" +
+                ".`view_rebalancing` = `holdings`.`view_rebalancing_id` %s" +
+                ") AS temp GROUP BY stock_id %s LIMIT ?";
         String stockIdCondition = getStockIdCondition(suspensionIds);
-        return String.format(sql, ids, ids, stockIdCondition, ids, ids, stockIdCondition);
+        String orderCondition = getOrderCondition(orderType);
+        return String.format(sql, ids, ids, stockIdCondition, orderCondition, ids, ids, stockIdCondition, orderCondition);
     }
 
     /**
@@ -528,5 +538,28 @@ public class SQLBuilder {
     public static String buildSpecifiedCubeQuery(String ids) {
         String sql = "SELECT `cube`.`id`,`cube`.`name`,`cube`.`symbol`,`cube`.`description`,`cube`.`owner_id`,`cube`.`follower_count`,`cube`.`net_value`,`cube`.`created_at`,`cube`.`updated_at`,`user`.`screen_name` FROM `cube`,`user` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`owner_id` = `user`.`id`;";
         return String.format(sql, ids, ids);
+    }
+
+    /**
+     * 获取调仓情况
+     *
+     * @param ids
+     * @param orderType
+     * @param rebalancingType
+     * @return
+     */
+    public static String buildSpecifiedCubeRebalancingRankQuery(String ids, OrderType orderType,
+                                                                RebalancingType rebalancingType) {
+        String sql = "SELECT `stock_name`,`stock_symbol`,ROUND(SUM(`change_weight`),2) AS " +
+                "`change_weight` FROM `rebalancing_history` WHERE `_id` IN (SELECT `_id` FROM " +
+                "`rebalancing_history` WHERE `cube_id` IN(SELECT `id` FROM `cube` WHERE `id` IN (%s) OR `symbol` IN " +
+                "(%s)) AND (`updated_at` BETWEEN ? AND ?) " +
+                "AND change_weight %s 0) GROUP BY stock_id %s;";
+
+
+        String orderCondition = getOrderCondition(orderType);
+        String sign = getRebalancingSign(rebalancingType);
+
+        return String.format(sql, ids, ids, sign, orderCondition);
     }
 }

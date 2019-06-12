@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -195,6 +196,20 @@ public class DateUtil {
         } else {
             return transactionDataDate(timestamp - TIMESTAMP_MILLS_ONE_DAY, false);
         }
+    }
+
+    public static void main(String[] args) {
+        Date date = null;
+        try {
+            date = new SimpleDateFormat("yyyyMMdd").parse("20190610");
+            long startTimestamp = DateUtil.getInstance().getDayStartTimestamp(date);
+            long endTimestamp = DateUtil.getInstance().getDayEndTimestamp(date);
+            System.out.println(startTimestamp);
+            System.out.println(endTimestamp);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

@@ -118,6 +118,8 @@ public class ApiManager {
     public void fetchCubeDetail(String symbol, ApiCallback callback) {
         String params = "?mix_rebalancing=true&ret_last_buy_rb_gid=true&symbol=" + symbol;
         Request request = new Request.Builder()
+//                .addHeader("Cookie","xq_a_token=df8524b38974fce13d20b7ee39af90871c03be91;u=5414038194")
+//                .addHeader("Cookie","xq_a_token=0aebf2e32b55e41f30f0042f3e556b5e26206173;u=411560226561917")
                 .url(CUBES_DETAIL + params)
                 .build();
         client.newCall(request).enqueue(callback);
@@ -144,6 +146,7 @@ public class ApiManager {
     public void fetchRebalancingHistory(int cubeId, ApiCallback callback) {
         String params = "?count=20&page=1&cube_id=" + cubeId;
         Request request = new Request.Builder()
+//                .addHeader("Cookie","xq_a_token=0aebf2e32b55e41f30f0042f3e556b5e26206173;u=411560226561917")
                 .url(CUBES_REBALANCING_HISTORY + params)
                 .build();
         client.newCall(request).enqueue(callback);

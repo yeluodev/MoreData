@@ -47,12 +47,8 @@ public class AutoTask {
         task.trackCube(1, 100, 15, true, false, OrderType.WEIGHT_DESC);
     }
 
-    public LeekResult<RebStock> trackCube(int level, int cubeLimit, int stockLimit, boolean removeSuspensionStock,
-                                    boolean noCash, OrderType orderType) {
-        AnalysisTask task = new AnalysisTask();
-        LeekResult<AlsStock> leekResult = task.stockRankList(level, cubeLimit, stockLimit, removeSuspensionStock,
-                orderType);
-        List<AlsStock> stockList = leekResult.getList();
+    private LeekResult<RebStock> trackCube(LeekResult<AlsStock> alsStockLeekResult, boolean noCash){
+        List<AlsStock> stockList = alsStockLeekResult.getList();
         List<RebStock> rebStockList = new ArrayList<>();
         int total = 0;
         for (AlsStock stock : stockList) {
@@ -69,7 +65,7 @@ public class AutoTask {
             total += rebStock.getWeight();
         }
 
-        int cash = noCash ? 0 : (int) leekResult.getCash();
+        int cash = noCash ? 0 : (int) alsStockLeekResult.getCash();
         int desTotal = 100 - cash;
         if (total < desTotal) {
             Collections.sort(rebStockList);
@@ -93,6 +89,22 @@ public class AutoTask {
         result.setList(rebStockList);
 
         return result;
+    }
+
+    public LeekResult<RebStock> trackCube(int level, int cubeLimit, int stockLimit, boolean removeSuspensionStock,
+                                    boolean noCash, OrderType orderType) {
+        AnalysisTask task = new AnalysisTask();
+        LeekResult<AlsStock> leekResult = task.stockRankList(level, cubeLimit, stockLimit, removeSuspensionStock,
+                orderType);
+        return trackCube(leekResult,noCash);
+    }
+
+    public LeekResult<RebStock> trackCube(String cubeIds, int cubeSize,int stockLimit, boolean removeSuspensionStock,
+                                          boolean noCash, OrderType orderType) {
+        AnalysisTask task = new AnalysisTask();
+        LeekResult<AlsStock> leekResult = task.stockRankList(cubeIds, cubeSize, stockLimit, removeSuspensionStock,
+                orderType);
+        return trackCube(leekResult,noCash);
     }
 
     /**

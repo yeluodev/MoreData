@@ -247,6 +247,7 @@
         let page = 1;
         let maxPage = 1;
         let totalCount = 0;
+        let trackCubeData = null;
 
         let headKeys = [[],
             ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
@@ -272,13 +273,14 @@
             };
 
 
-            $('input[name="tagsinput"].tagsinput').on('change', function () {
-                cubeIds = $(this).val();
-            });
+            // $('input[name="tagsinput"].tagsinput').on('change', function () {
+            //     cubeIds = $('input[name="tagsinput"].tagsinput').val();
+            // });
 
             $('#complete').on('click', function () {
+                cubeIds = $('input[name="tagsinput"].tagsinput').val();
                 $.ajax({
-                    url: 'http://localhost:8080/cube/list?cubeIds=' + cubeIds,
+                    url: 'http://118.25.182.189/moredata/cube/list?cubeIds=' + cubeIds,
                     dataType: "json",
                     success: function (data) {
                         console.log(data);
@@ -361,6 +363,23 @@
                 fillTableData(type, cubeIds, page, false);
             });
 
+            $('#track-cube').on('click', function () {
+                fetchTrackCube();
+            });
+            $('#myModal').on('shown.bs.modal', function (event) {
+                console.log(event);
+                let modal = $(this);
+                let data = trackCubeData.data;
+                let list = data.list;
+                let html = '';
+                list.forEach(function (item) {
+                    html += item['stock_name'] + '---' + item['weight'] + '<br/>';
+                });
+
+                modal.find('#myModalLabel').text('选定跟踪组合--' + data['updatedAt']);
+                modal.find('#track-cube-content')[0].innerHTML = html;
+            });
+
             /**
              * 填充表格数据
              * @param type
@@ -379,7 +398,11 @@
                 let html = "<table><tr>";
 
                 headKeys[type].forEach(function (value) {
-                    html += '<th>' + value + '</th>';
+                    if(value==='比重/%' || value==='满仓比重/%' || value==='调仓比重/%'){
+                        html += '<th style="text-align:right;">' + value + '</th>';
+                    }else {
+                        html += '<th>' + value + '</th>';
+                    }
                 });
                 html += '</tr>';
 
@@ -387,8 +410,12 @@
                     html += '<tr>';
                     let item = list[i];
                     if (item == null) {
-                        headKeys[type].forEach(function () {
-                            html += "<td></td>";
+                        headKeys[type].forEach(function (value) {
+                            if(value==='比重/%' || value==='满仓比重/%' || value==='调仓比重/%'){
+                                html += '<td style="text-align:right;"></td>';
+                            }else {
+                                html += '<td></td>';
+                            }
                         });
                         html += '</tr>';
                         continue;
@@ -409,7 +436,7 @@
                         if (value === 'percent'
                             || value === 'percentWithCash'
                             || value === 'netValue') {
-                            html += '<td>' + item[value].toFixed(type === 3 ? 6 : 4) + '</td>';
+                            html += '<td style="text-align:right;">' + item[value].toFixed(type === 3 ? 6 : 4) + '</td>';
                         } else {
                             html += '<td>' + item[value] + '</td>';
                         }
@@ -478,12 +505,56 @@
             }
         });
 
+        /**
+         * 请求接口数据
+         * @param type
+         * @param level
+         */
+        function fetchTrackCube() {
+            let ajax = new XMLHttpRequest();
+            ajax.open('get', 'http://118.25.182.189/moredata/cube/track?cubeIds=' + cubeIds);
+            ajax.send();
+            ajax.onreadystatechange = function () {
+                if (ajax.readyState === 4 && ajax.status === 200) {
+                    let responseText = ajax.responseText;
+                    trackCubeData = JSON.parse(responseText);
+                }
+            }
+        }
 
-        //TODO 样式调整/任意组合调仓情况API/生成跟踪组合
+        //TODO 样式调整/线上db中未存的组合找不到，需要抓取雪球所有组合数据
 
     </script>
 </head>
 <body style="position:relative;z-index:10;">
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel">
+                    选定跟踪组合
+                </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+
+            </div>
+            <div class="modal-body" id="track-cube-content">
+                在这里添加一些文本
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                </button>
+                <button type="button" class="btn btn-primary">
+                    提交更改
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
 <div id='autoSearch' class="bdSug_wpr" style="height:auto;display: none;position:absolute;z-index:110;">
     <ul id='showResult' style="background: rgba(52, 73, 94, 0.95);"></ul>
 </div>
@@ -525,7 +596,7 @@
         <div class="btn-group">
             <a id="stock" class="segment btn  active" href="#fakelink">个股</span></a>
             <a id="segment" class="segment btn " href="#fakelink">板块</a>
-            <a id="rebalancing" class="segment btn" href="#fakelink" hidden>调仓</a>
+            <a id="rebalancing" class="segment btn" href="#fakelink">调仓</a>
         </div>
         <b id="cash" style="margin-left: 24px;"></b>
         <div id="update-time" style="flex: 1;text-align: right;"></div>
