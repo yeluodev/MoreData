@@ -548,7 +548,7 @@
          */
         function fetchChartData(type, level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://localhost:8080/analysis?type=' + type + '&level=' + level);
+            ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&level=' + level);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -744,10 +744,10 @@
     <div id="chart" style="width: 100%;"></div>
     <!--<div class="hr"></div>-->
     <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
-        <div class="footer" id="size">共0条数据</div>
-        <a id="next-page" class="footer" href="javascript:void(0);">下一页</a>
-        <div class="footer" id="page">1/1</div>
-        <a id='last-page' class="footer" href="javascript:void(0);">上一页</a>
+        <div class="table-footer" id="size">共0条数据</div>
+        <a id="next-page" class="table-footer" href="javascript:void(0);">下一页</a>
+        <div class="table-footer" id="page">1/1</div>
+        <a id='last-page' class="table-footer" href="javascript:void(0);">上一页</a>
 
     </div>
 
@@ -806,10 +806,10 @@
         <div id="rank-table" style="width: 100%;"></div>
         <!--<div class="hr"></div>-->
         <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
-            <div class="footer" id="account-size">共0条数据</div>
-            <a id="account-next-page" class="footer" href="javascript:void(0);">下一页</a>
-            <div class="footer" id="account-page">1/1</div>
-            <a id='account-last-page' class="footer" href="javascript:void(0);">上一页</a>
+            <div class="table-footer" id="account-size">共0条数据</div>
+            <a id="account-next-page" class="table-footer" href="javascript:void(0);">下一页</a>
+            <div class="table-footer" id="account-page">1/1</div>
+            <a id='account-last-page' class="table-footer" href="javascript:void(0);">上一页</a>
 
         </div>
     </div>

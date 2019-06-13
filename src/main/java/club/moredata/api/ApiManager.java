@@ -161,7 +161,6 @@ public class ApiManager {
     public void fetchRebalancingHistory(int cubeId, ApiCallback callback) {
         String params = "?count=20&page=1&cube_id=" + cubeId;
         Request request = new Request.Builder()
-//                .addHeader("Cookie","xq_a_token=0aebf2e32b55e41f30f0042f3e556b5e26206173;u=411560226561917")
                 .url(CUBES_REBALANCING_HISTORY + params)
                 .build();
         client.newCall(request).enqueue(callback);
@@ -313,6 +312,15 @@ public class ApiManager {
 //                e.printStackTrace();
 //            }
 //        }
+
+        for (int i = 0; i < 10; i++) {
+            getInstance().fetchRebalancingHistory(1773329, new ApiCallback() {
+                @Override
+                public void onSuccess(String response) {
+                }
+            });
+        }
+
     }
 
 }
