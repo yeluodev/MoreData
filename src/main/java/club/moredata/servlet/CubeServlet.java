@@ -34,15 +34,8 @@ import java.util.regex.Pattern;
 public class CubeServlet extends BaseServlet {
 
     private static final long serialVersionUID = 6369933881428115052L;
-    private Pattern levelPattern = Pattern.compile("[1-3]");
-    private Pattern cubePattern = Pattern.compile("^([1-9]|[1-9]\\d|100)$");
     private Pattern stockPattern = Pattern.compile("^([1-9]|[12]\\d|30)$");
-    private Pattern suspensionPattern = Pattern.compile("[01]");
-    private Pattern cashPattern = Pattern.compile("[01]");
     private Pattern orderPattern = Pattern.compile("[1-4]");
-    private Pattern cubeIdsPattern = Pattern.compile("^(((ZH)?[1-9]\\d*[,])*(ZH)?[1-9]\\d*)$");
-    private Pattern symbolPattern = Pattern.compile("^(ZH\\d{5,7})$");
-
     private Pattern paramKeyPattern = Pattern.compile("code|message|data|id|status|cube_id|error_status" +
             "|error_code|error_message|error_message|comment");
 

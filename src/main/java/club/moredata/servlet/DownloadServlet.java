@@ -27,7 +27,6 @@ public class DownloadServlet extends BaseServlet {
         public static final String EXCEL_FILE_PATH = "/var/local/club.moredata/excel/";
 //    public static final String EXCEL_FILE_PATH = "D:/excel/";
 //    public static final String EXCEL_FILE_PATH = "H:/excel/";
-    private Pattern levelPattern = Pattern.compile("[1-3]");
 
     private String[] stockHeadArr = new String[]{"序号", "名称", "代码", "所属板块", "持有组合数", "比重/%", "满仓比重/%",};
     private String[] segmentHeadArr = new String[]{"序号", "名称", "比重/%", "满仓比重/%",};

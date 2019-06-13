@@ -10,38 +10,21 @@ import com.alibaba.fastjson.serializer.PropertyFilter;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.regex.Pattern;
 
 /**
  * @author yeluodev1226
  */
 @WebServlet(name = "AnalysisServlet", urlPatterns = "/analysis")
-public class AnalysisServlet extends HttpServlet {
+public class AnalysisServlet extends BaseServlet {
 
     private static final long serialVersionUID = 6369933881428115052L;
-    private Pattern typePattern = Pattern.compile("[1-5]");
-    private Pattern levelPattern = Pattern.compile("[1-3]");
-    private Pattern cubePattern = Pattern.compile("^([1-9]|[1-9]\\d|100)$");
-    private Pattern stockPattern = Pattern.compile("^([1-9]|[1-9]\\d|[1-9]\\d{2}|[12]\\d{3}|3000)$");
-    private Pattern suspensionPattern = Pattern.compile("[01]");
-    private Pattern orderPattern = Pattern.compile("[1-6]");
-    private Pattern rebalancingPattern = Pattern.compile("[1-3]");
-    private Pattern cubeIdsPattern = Pattern.compile("^(((ZH)?[1-9]\\d*[,])*(ZH)?[1-9]\\d*)$");
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.setCharacterEncoding("utf-8");
-        response.setContentType("text/json;charset=utf-8");
+    public void dealRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         PrintWriter out = response.getWriter();
 
         String type = request.getParameter("type");
@@ -76,7 +59,7 @@ public class AnalysisServlet extends HttpServlet {
             rebalancingType = "1";
         }
 
-        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ","")).matches()) {
+        if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds.replaceAll(" ", "")).matches()) {
             leekResponse = LeekResponse.errorParameterResponse();
             out.print(JSON.toJSONString(leekResponse));
             return;

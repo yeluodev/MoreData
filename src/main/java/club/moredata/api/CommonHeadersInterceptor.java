@@ -43,6 +43,9 @@ public class CommonHeadersInterceptor implements Interceptor {
 
         builder.headers(headersBuilder.build());
         request = builder.build();
+
+
+        //TODO 考虑拦截response,若是请求频繁导致被封，将当前cookie置入不活跃状态，避免随机cookie再次请求失败
         return chain.proceed(request);
     }
 }
