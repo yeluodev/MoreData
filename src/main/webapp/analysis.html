@@ -7,10 +7,15 @@
     <link href="css/vendor/bootstrap.min.css" rel="stylesheet">
     <link href="css/flat-ui.css" rel="stylesheet">
     <style>
-        body {
-            width: 100%;
+
+        html, body {
+            height: 100%;
             margin: 0;
             padding: 0;
+        }
+
+        body {
+            width: 100%;
             background-color: #F8F8F8;
             opacity: 0;
             transition: opacity 0.2s
@@ -18,6 +23,23 @@
 
         body.bactive {
             opacity: 1
+        }
+
+        .page {
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            min-height: 100%;
+            padding-bottom: 72px;
+        }
+
+        footer {
+            background-color: #F8F8F8;
+            width: 100%;
+            height: 72px;
+            padding: 0 72px;
+            margin-top: -72px;
+            flex-direction: row-reverse;
         }
 
         .flex {
@@ -127,7 +149,7 @@
             background: #F8F8F8;
         }
 
-        .footer {
+        .table-footer {
             margin-right: 24px;
             font-size: 16px;
         }
@@ -232,6 +254,7 @@
             height: 36px;
         }
 
+
     </style>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -272,35 +295,34 @@
                 }, 0);
             };
 
-
-            // $('input[name="tagsinput"].tagsinput').on('change', function () {
-            //     cubeIds = $('input[name="tagsinput"].tagsinput').val();
-            // });
-
             $('#complete').on('click', function () {
                 cubeIds = $('input[name="tagsinput"].tagsinput').val();
                 console.log(cubeIds);
+                if (cubeIds === "") {
+                    $('#cube-container').empty().hide();
+                    $('#result-table').empty();
+                    $('#result-container').hide();
+                    setTimeout(function () {
+                        alert('输入为空，请告诉我你要分析的组合ID');
+                    }, 100);
+                    return;
+                }
                 $.ajax({
-                    url: 'http://localhost:8080/cube/list?cubeIds=' + cubeIds,
-                    // url: 'http://118.25.182.189/moredata/cube/list?cubeIds=' + cubeIds,
+                    url: 'http://118.25.182.189/moredata/cube/list?cubeIds=' + cubeIds,
                     dataType: "json",
                     success: function (data) {
-                        console.log(data);
                         cubeData = data;
                         createCubeList();
+                        console.log(cubeIds);
+                        console.log(data.data.count + '-' + cubeIds.split(',').length);
+                        if (data.data.count < cubeIds.split(',').length) {
+                            $('#result-table').empty();
+                            $('#result-container').hide();
+                            return;
+                        }
+                        createResultTable();
                     }
                 });
-
-                // $.ajax({
-                //     url: 'http://localhost:8080/analysis?type='+type+'&cubeIds=' + cubeIds,
-                //     dataType: "json",
-                //     success: function (data) {
-                //         console.log(data);
-                //         cubeData = data;
-                //         createResultTable();
-                //     }
-                // })
-                createResultTable();
             });
 
             selectors.forEach(function (value) {
@@ -344,7 +366,7 @@
                             break;
                     }
                     page = 1;
-                    fillTableData(type, cubeIds, page, true);
+                    fillTableData(type, cubeIds, page, false);
                 });
             });
 
@@ -366,7 +388,12 @@
             });
 
             $('#track-cube').on('click', function () {
-                fetchTrackCube();
+                $.ajax({
+                    url: 'http://118.25.182.189/moredata/cube/track?cubeIds=' + cubeIds,
+                    success: function (data) {
+                        trackCubeData = data;
+                    }
+                });
             });
             $('#myModal').on('shown.bs.modal', function (event) {
                 console.log(event);
@@ -400,9 +427,9 @@
                 let html = "<table><tr>";
 
                 headKeys[type].forEach(function (value) {
-                    if(value==='比重/%' || value==='满仓比重/%' || value==='调仓比重/%'){
+                    if (value === '比重/%' || value === '满仓比重/%' || value === '调仓比重/%') {
                         html += '<th style="text-align:right;">' + value + '</th>';
-                    }else {
+                    } else {
                         html += '<th>' + value + '</th>';
                     }
                 });
@@ -413,9 +440,9 @@
                     let item = list[i];
                     if (item == null) {
                         headKeys[type].forEach(function (value) {
-                            if(value==='比重/%' || value==='满仓比重/%' || value==='调仓比重/%'){
+                            if (value === '比重/%' || value === '满仓比重/%' || value === '调仓比重/%') {
                                 html += '<td style="text-align:right;"></td>';
-                            }else {
+                            } else {
                                 html += '<td></td>';
                             }
                         });
@@ -463,18 +490,27 @@
              * @param cubeIds
              */
             function fetchAnalysisResult(type, cubeIds) {
-                let ajax = new XMLHttpRequest();
-                ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds);
-                ajax.send();
-                ajax.onreadystatechange = function () {
-                    if (ajax.readyState === 4 && ajax.status === 200) {
-                        let chart = ajax.responseText;
-                        console.log(chart);
-                        chart = JSON.parse(chart);
-                        chartsArr[type] = chart;
+                // let ajax = new XMLHttpRequest();
+                // ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds);
+                // ajax.send();
+                // ajax.onreadystatechange = function () {
+                //     if (ajax.readyState === 4 && ajax.status === 200) {
+                //         let chart = ajax.responseText;
+                //         console.log(chart);
+                //         chart = JSON.parse(chart);
+                //         chartsArr[type] = chart;
+                //         fillTableData(type, cubeIds, 1, false);
+                //     }
+                // }
+
+                $.ajax({
+                    url: 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds,
+                    success: function (data) {
+                        console.log(data);
+                        chartsArr[type] = data;
                         fillTableData(type, cubeIds, 1, false);
                     }
-                }
+                });
             }
 
             function createResultTable() {
@@ -485,6 +521,7 @@
 
             function createCubeList() {
                 $('#cube-container').show();
+                $('#cube-container').empty();
                 if (cubeData == null) {
                     $('#cube-list').html('<div>输入的组合ID可能有误</div>');
                     return;
@@ -493,38 +530,38 @@
                 let data = cubeData.data;
                 let list = data.list;
 
-                let html = '';
-                html += '<div class="flex">';
-                html += '<a id="result-title" href="javascript:void(0);" style="margin: 12px 0;">';
-                html += '你要分析的组合如下：';
-                html += '<div class="bottom-line"></div>';
-                html += '</a>';
-                html += '</div>';
-                html += '<div class="hr"></div>';
-                html += '<div id="cube-list" class="flex">';
-                html += generateCubeCardList(list,true,null);
-                html += '</div>';
+                console.log("data=="+data.count);
+                if (data.count > 0) {
+                    let html = '';
+                    html += '<div class="flex">';
+                    html += '<a id="result-title" href="javascript:void(0);" style="margin: 12px 0;">';
+                    html += '你要分析的组合如下：';
+                    html += '<div class="bottom-line"></div>';
+                    html += '</a>';
+                    html += '</div>';
+                    html += '<div class="hr"></div>';
+                    html += '<div id="cube-list" class="flex">';
+                    html += generateCubeCardList(list, true, null);
+                    html += '</div>';
+                    $('#cube-container').append(html);
+                }
 
-                $('#cube-container').empty().append(html);
-
-                if(data.count < cubeIds.split(',').length){
-                    $('#result-title').text('你要进行分析的组合如下，另还有'+(cubeIds.split(',').length-data.count)+'条未在库中找到');
+                if (data.count < cubeIds.split(',').length) {
+                    $('#result-title').html('你要进行分析的组合如下，另还有' + (cubeIds.split(',').length - data.count) + '条未在库中找到').append('<div class="bottom-line"></div>');
 
                     let searchResultList = data['searchResult'];
                     let searchHtml = '';
                     searchResultList.forEach(function (searchResult) {
-                        // searchHtml += '<div class="card" id="cube-container" style="display: block;background-color: transparent;box-shadow: none;">';
                         searchHtml += '<div class="flex">';
                         searchHtml += '<a href="javascript:void(0);" style="margin: 12px 0;">';
-                        searchHtml += '为你找到'+searchResult['q']+'的'+searchResult['list'].length+'条结果,点击你要选择的组合以添加入库';
+                        searchHtml += '为你找到' + searchResult['q'] + '的' + searchResult['list'].length + '条结果,点击你要选择的组合以添加入库';
                         searchHtml += '<div class="bottom-line"></div>';
                         searchHtml += '</a>';
                         searchHtml += '</div>';
                         searchHtml += '<div class="hr"></div>';
                         searchHtml += '<div id="cube-list" class="flex">';
-                        searchHtml += generateCubeCardList(searchResult['list'],false,searchResult['q']);
+                        searchHtml += generateCubeCardList(searchResult['list'], false, searchResult['q']);
                         searchHtml += '</div>';
-                        // searchHtml += '</div>';
                     });
 
                     $('#cube-container').append(searchHtml);
@@ -532,13 +569,13 @@
                 }
             }
 
-            function generateCubeCardList(list,isDbCube,tag) {
+            function generateCubeCardList(list, isDbCube, tag) {
                 let html = '';
                 list.forEach(function (cube) {
-                    if(isDbCube){
+                    if (isDbCube) {
                         html += '<a class="cube" target="_blank" href="https://xueqiu.com/P/' + cube['symbol'] + '">';
-                    }else {
-                        html += '<a class="cube" href="javascript:modifyTag(\''+tag+'\',\''+cube['symbol']+'\');">';
+                    } else {
+                        html += '<a class="cube" href="javascript:insertAndCopy(\'' + tag + '\',\'' + cube['symbol'] + '\');">';
                     }
                     html += '<div><h5>' + cube['name'] + ' ' + cube['symbol'] + '</h5></div>';
                     html += '<div style="flex: 1;font-size: 16px;padding: 4px 8px;overflow: hidden;">' + cube['description'] + '</div>';
@@ -554,45 +591,25 @@
         });
 
         //点击的时候应当更新组合到数据库
-        function modifyTag(tag,symbol) {
-
-            //TODO 请求接口将点击的组合入库
+        function insertAndCopy(tag, symbol) {
             //步骤：发起请求入库->弹框提示正在入库，请稍后再进行分析->提醒用户删除tag,输入复制好的组合ID->再次点击分析->得到完整结果
-
-            let oInput = document.createElement('input');
-            oInput.value = symbol;
-            document.body.appendChild(oInput);
-            oInput.select(); // 选择对象
-            document.execCommand("Copy"); // 执行浏览器复制命令
-            oInput.className = 'oInput';
-            oInput.style.display='none';
-            alert(symbol+'已复制到剪贴板，请删除'+tag+'后，粘贴到输入框，进行分析');
-            //改变value值无效果
-            //TODO 如何更新tagsinput中的内容
-            //考虑改变操作逻辑
-            // $('input[name="tagsinput"].tagsinput').val(cubeIds);
-
-
-        }
-
-        /**
-         * 请求接口数据
-         * @param type
-         * @param level
-         */
-        function fetchTrackCube() {
-            let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://118.25.182.189/moredata/cube/track?cubeIds=' + cubeIds);
-            ajax.send();
-            ajax.onreadystatechange = function () {
-                if (ajax.readyState === 4 && ajax.status === 200) {
-                    let responseText = ajax.responseText;
-                    trackCubeData = JSON.parse(responseText);
+            $.ajax({
+                url: 'http://118.25.182.189/moredata/cube/insert?symbol=' + symbol,
+                success: function (data) {
+                    console.log(data);
+                    let oInput = document.createElement('input');
+                    oInput.value = symbol;
+                    document.body.appendChild(oInput);
+                    oInput.select(); // 选择对象
+                    document.execCommand("Copy"); // 执行浏览器复制命令
+                    oInput.className = 'oInput';
+                    oInput.style.display = 'none';
+                    alert(data.message + ' ' + symbol + '已复制到剪贴板，请删除' + tag + '后，粘贴到输入框，进行分析');
                 }
-            }
+            });
         }
 
-        //TODO 样式调整/线上db中未存的组合找不到，需要抓取雪球所有组合数据
+        //TODO 样式调整
 
     </script>
 </head>
@@ -629,66 +646,53 @@
     <ul id='showResult' style="background: rgba(52, 73, 94, 0.95);"></ul>
 </div>
 
-<iframe scrolling="no" src="common/head.html" width="100%" id="iframe" style="position:relative;z-index:100;">
-</iframe>
+<div class="page">
+    <iframe scrolling="no" src="common/head.html" width="100%" id="iframe" style="position:relative;z-index:100;">
+    </iframe>
 
-<div class="tagsinput-primary search-bar" style="position:relative;z-index:100;">
-    <a id="complete" class="btn" style="margin: auto 0 auto 36px;" href="#fakelink">选择完毕，进行分析</a>
-    <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="1377622,1423409"/>
-</div>
-
-<div class="card" id="cube-container" style="display: none;background-color: transparent;box-shadow: none;">
-    <!--<div class="flex">-->
-        <!--<a id="result-title" href="javascript:void(0);" style="margin: 12px 0;">你要进行分析的已入库组合如下:-->
-            <!--<div class="bottom-line"></div>-->
-        <!--</a>-->
-    <!--</div>-->
-    <!--<div class="hr"></div>-->
-    <!--<div id="cube-list" class="flex"></div>-->
-</div>
-
-<div class="card" id="result-container" style="display: none;">
-    <div class="flex" style="height: 48px;" id="level-duration">
-        <a id="quarter" class="duration" href="javascript:void(0);">分析结果
-            <div class="bottom-line"></div>
-        </a>
-        <div style="flex: 1;"></div>
-        <a id="download" target="_blank" href="#" style="margin: 0 36px;" hidden>
-            <b>Excel导出</b>
-        </a>
-        <a id="track-cube" href="javascript:void(0);" data-toggle="modal" data-target="#myModal">
-            <b>查看跟踪组合</b>
-        </a>
+    <div class="tagsinput-primary search-bar" style="position:relative;z-index:100;">
+        <a id="complete" class="btn" style="margin: auto 0 auto 36px;" href="#fakelink">选择完毕，进行分析</a>
+        <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="1377622,1423409"/>
     </div>
-    <div class="hr"></div>
-    <!--<div class="btn-toolbar">-->
-    <div class="flex">
-        <div class="btn-group">
-            <a id="stock" class="segment btn  active" href="#fakelink">个股</span></a>
-            <a id="segment" class="segment btn " href="#fakelink">板块</a>
-            <a id="rebalancing" class="segment btn" href="#fakelink">调仓</a>
+
+    <div class="card" id="cube-container" style="display: none;background-color: transparent;box-shadow: none;">
+    </div>
+
+    <div class="card" id="result-container" style="display: none;">
+        <div class="flex" style="height: 48px;" id="level-duration">
+            <a id="quarter" class="duration" href="javascript:void(0);">分析结果
+                <div class="bottom-line"></div>
+            </a>
+            <div style="flex: 1;"></div>
+            <a id="download" target="_blank" href="#" style="margin: 0 36px;" hidden>
+                <b>Excel导出</b>
+            </a>
+            <a id="track-cube" href="javascript:void(0);" data-toggle="modal" data-target="#myModal">
+                <b>查看跟踪组合</b>
+            </a>
         </div>
-        <b id="cash" style="margin-left: 24px;"></b>
-        <div id="update-time" style="flex: 1;text-align: right;"></div>
-
+        <div class="hr"></div>
+        <div class="flex">
+            <div class="btn-group">
+                <a id="stock" class="segment btn  active" href="#fakelink">个股</span></a>
+                <a id="segment" class="segment btn " href="#fakelink">板块</a>
+                <a id="rebalancing" class="segment btn" href="#fakelink">调仓</a>
+            </div>
+            <b id="cash" style="margin-left: 24px;"></b>
+            <div id="update-time" style="flex: 1;text-align: right;"></div>
+        </div>
+        <div id="result-table" style="width: 100%;"></div>
+        <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
+            <div class="table-footer" id="size">共0条数据</div>
+            <a id="next-page" class="table-footer" href="javascript:void(0);">下一页</a>
+            <div class="table-footer" id="page">1/1</div>
+            <a id='last-page' class="table-footer" href="javascript:void(0);">上一页</a>
+        </div>
     </div>
-
-    <!--</div> &lt;!&ndash; /toolbar &ndash;&gt;-->
-    <div id="result-table" style="width: 100%;"></div>
-    <!--<div class="hr"></div>-->
-    <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
-        <div class="footer" id="size">共0条数据</div>
-        <a id="next-page" class="footer" href="javascript:void(0);">下一页</a>
-        <div class="footer" id="page">1/1</div>
-        <a id='last-page' class="footer" href="javascript:void(0);">上一页</a>
-
-    </div>
-
 </div>
 
 
-<footer class="flex"
-        style="background-color:#F8F8F8;width: 100%;height: 72px;padding:0 72px;flex-direction: row-reverse;" hidden>
+<footer class="flex">
     <a href="javascrip:void(0);" style="width:120px;text-align: right;">意见反馈</a>
     <b style="flex:1;text-align: center">数据来源雪球，仅供参考</b>
     <span style="width:120px;"></span>

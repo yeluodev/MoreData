@@ -17,7 +17,7 @@
                 SELECT segment_name,segment_color,ROUND(SUM(weight),2) AS weight,COUNT(*) AS count,ROUND(SUM(weight)*100/(SELECT ROUND(SUM(weight),2) AS weight FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp ),6) AS percent FROM (SELECT `holdings`.* from `cube`,`holdings` WHERE `cube`.`id` IN (1773085,1359749,1392200,52627,1423409,1387791) AND `cube`.`view_rebalancing` = `holdings`.`view_rebalancing_id`) AS temp GROUP BY segment_id ORDER BY weight DESC,count DESC;
 
     1.0.2
-        爬取雪球所有组合数据
+        爬取雪球所有组合数据                                  DONE
             ZH100000递增组合并不一定存在
             按照5月份抓取的用户数据来看，组合共有1043735个
             爬取过快会短暂被封，若无法实现快速爬虫，就改成用户选择后爬取入库（增加一步搜索操作）

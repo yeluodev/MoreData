@@ -41,6 +41,7 @@ public class CubeServlet extends BaseServlet {
     private Pattern cashPattern = Pattern.compile("[01]");
     private Pattern orderPattern = Pattern.compile("[1-4]");
     private Pattern cubeIdsPattern = Pattern.compile("^(((ZH)?[1-9]\\d*[,])*(ZH)?[1-9]\\d*)$");
+    private Pattern symbolPattern = Pattern.compile("^(ZH\\d{5,7})$");
 
     private Pattern paramKeyPattern = Pattern.compile("code|message|data|id|status|cube_id|error_status" +
             "|error_code|error_message|error_message|comment");
@@ -50,11 +51,6 @@ public class CubeServlet extends BaseServlet {
         PrintWriter out = response.getWriter();
 
         LeekResponse leekResponse;
-        if (!DateUtil.getInstance().isTradingDay(System.currentTimeMillis())) {
-            leekResponse = LeekResponse.errorResponse(LeekResponse.ERROR_OTHER, "A股今日休市，组合不进行跟踪调仓");
-            out.print(JSON.toJSONString(leekResponse));
-            return;
-        }
 
         String matchPath = request.getHttpServletMapping().getMatchValue();
         if (matchPath == null) {
@@ -71,6 +67,7 @@ public class CubeServlet extends BaseServlet {
         String orderType = request.getParameter("order");
         String key = request.getParameter("key");
         String cubeIds = request.getParameter("cubeIds");
+        String symbol = request.getParameter("symbol");
 
         if (level == null) {
             level = "1";
@@ -92,6 +89,9 @@ public class CubeServlet extends BaseServlet {
         }
         if (key == null) {
             key = "";
+        }
+        if(symbol==null){
+            symbol = "";
         }
 
         if (cubeIds != null && !cubeIdsPattern.matcher(cubeIds = cubeIds.replaceAll(" ", "")).matches()) {
@@ -119,8 +119,15 @@ public class CubeServlet extends BaseServlet {
 
         PropertyFilter propertyFilter = (object, name, value) -> true;
         AutoTask autoTask = new AutoTask();
+        CubeTask cubeTask = new CubeTask();
         switch (matchPath) {
             case "rebalancing":
+                //对雪球组合进行自动调仓
+                if (!DateUtil.getInstance().isTradingDay(System.currentTimeMillis())) {
+                    leekResponse = LeekResponse.errorResponse(LeekResponse.ERROR_OTHER, "A股今日休市，组合不进行跟踪调仓");
+                    out.print(JSON.toJSONString(leekResponse));
+                    return;
+                }
                 Rebalancing rebalancing = autoTask.rebalancingCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
                         cashInt == 0, OrderType.getType(orderType));
                 if (rebalancing == null) {
@@ -131,6 +138,7 @@ public class CubeServlet extends BaseServlet {
                 propertyFilter = (object, name, value) -> paramKeyPattern.matcher(name).matches();
                 break;
             case "track":
+                //生成追踪组合
                 LeekResult<RebStock> leekResult;
                 if (cubeIds == null) {
                     leekResult = autoTask.trackCube(levelInt, cubeLimitInt, stockLimitInt, suspensionInt == 0,
@@ -155,22 +163,30 @@ public class CubeServlet extends BaseServlet {
                     leekResponse = LeekResponse.successResponse(searchResult);
                 }
                 break;
+            case "insert":
+                //更新未入库组合
+                if (!symbolPattern.matcher(symbol).matches()) {
+                    leekResponse = LeekResponse.errorParameterResponse();
+                    out.print(JSON.toJSONString(leekResponse));
+                    return;
+                }
+                cubeTask.updateCubeDetail(symbol);
+                leekResponse = LeekResponse.successResponse(null,"已加入更新队列，稍后再试");
+                break;
             case "list":
+                //返回用户输入的组合列表，分为已入库列表和未入库的搜索结果列表
                 if (cubeIds == null) {
                     leekResponse = LeekResponse.errorParameterResponse();
                 } else {
-                    CubeTask task = new CubeTask();
-                    LeekResult<Cube> cubeLeekResult = task.fetchCubeList(Util.dealCubeIds(cubeIds));
+                    LeekResult<Cube> cubeLeekResult = cubeTask.fetchCubeList(Util.dealCubeIds(cubeIds));
                     List<String> cubeIdList = Arrays.asList(cubeIds.split(","));
                     List<String> copyList = new ArrayList<>(cubeIdList);
                     cubeLeekResult.getList().forEach(cube -> {
-                        if(copyList.contains(cube.getSymbol()) || copyList.contains(String.valueOf(cube.getId()))){
+                        if (copyList.contains(cube.getSymbol()) || copyList.contains(String.valueOf(cube.getId()))) {
                             copyList.remove(cube.getSymbol());
                             copyList.remove(String.valueOf(cube.getId()));
                         }
                     });
-//                    StringBuilder builder = new StringBuilder();
-//                    copyList.forEach(id -> builder.append(id).append(","));
 
                     List<SearchResult<Cube>> searchResultList = new ArrayList<>();
                     copyList.forEach(id -> {

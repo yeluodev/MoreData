@@ -136,7 +136,7 @@
             background: #F8F8F8;
         }
 
-        .footer {
+        .table-footer {
             margin-right: 24px;
             font-size: 16px;
         }
@@ -548,7 +548,7 @@
          */
         function fetchChartData(type, level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&level=' + level);
+            ajax.open('get', 'http://localhost:8080/analysis?type=' + type + '&level=' + level);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {

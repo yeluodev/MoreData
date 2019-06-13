@@ -23,19 +23,25 @@ public class SQLBuilder {
      * @return
      */
     public static String buildAccountInsert() {
-        return "INSERT IGNORE INTO `user`(`id`,`screen_name`,`description`,`photo_domain`,`profile_image_url`) VALUES" +
+        return "INSERT INTO `user`(`id`,`screen_name`,`description`,`followers_count`,`friends_count`," +
+                "`photo_domain`," +
+                "`profile_image_url`) " +
+                "VALUES" +
                 "(?,?,?," +
-                "?,?) ON DUPLICATE KEY UPDATE `screen_name` = ?,`description` = ?,`photo_domain` = ?,`profile_image_url` = ?";
+                "?,?,?,?) ON DUPLICATE KEY UPDATE `screen_name` = values(`screen_name`),`description` = values" +
+                "(`description`),`followers_count` = values(`followers_count`),`friends_count` = values(`friends_count`),`photo_domain` " +
+                "= values(`photo_domain`)," +
+                "`profile_image_url` = values(`profile_image_url`)";
     }
 
     /**
-     * 插入cube组合表
+     * 插入cube组合表，风云榜组合list中组合信息很简单，还需另外请求详情
      *
      * @return
      */
     public static String buildCubeInsert() {
         return "INSERT INTO `cube`(`id`,`name`,`symbol`,`owner_id`,`follower_count`) VALUES(?,?,?,?,?) ON DUPLICATE " +
-                "KEY UPDATE `name` = ?,`symbol` = ?,`owner_id` = ?,`follower_count` = ?";
+                "KEY UPDATE `name` = VALUES(`name`),`symbol` = VALUES(`symbol`),`owner_id` = VALUES(`owner_id`),`follower_count` = VALUES(`follower_count`)";
     }
 
     /**
@@ -44,9 +50,13 @@ public class SQLBuilder {
      * @return
      */
     public static String buildCubeDetailInsert() {
-        return "REPLACE INTO `cube` (`id`, `name`, `symbol`, `description`, `owner_id`, `follower_count`, " +
+        return "INSERT INTO `cube` (`id`, `name`, `symbol`, `description`, `owner_id`, `follower_count`, " +
                 "`active_flag`, `created_at`, `updated_at`, `daily_gain`, `monthly_gain`, `total_gain`, `net_value`, " +
-                "`rank_percent`, `tag`, `view_rebalancing`,`closed_at`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                "`rank_percent`, `tag`, `view_rebalancing`,`closed_at`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON" +
+                " DUPLICATE KEY UPDATE `name` = VALUES(`name`),`description` = VALUES(`description`),`follower_count` = VALUES(`follower_count`),`active_flag`" +
+                " = VALUES(`active_flag`),`updated_at` = VALUES(`updated_at`),`daily_gain` = VALUES(`daily_gain`),`monthly_gain` = VALUES(`monthly_gain`),`total_gain` = " +
+                "VALUES(`total_gain`),`net_value` = VALUES(`net_value`),`rank_percent` = VALUES(`rank_percent`),`tag` = VALUES(`tag`),`view_rebalancing` = " +
+                "VALUES(`view_rebalancing`),`closed_at` = VALUES(`closed_at`);";
     }
 
     /**
@@ -102,12 +112,20 @@ public class SQLBuilder {
      * @return
      */
     public static String buildRebalancingInsert() {
-        return "INSERT INTO `view_rebalancing`(`id`,`status`,`cube_id`,`prev_bebalancing_id`,`created_at`," +
+        return "INSERT INTO `view_rebalancing`(`id`,`status`,`cube_id`,`prev_bebalancing_id`,`category`," +
+                "`exe_strategy`,`created_at`," +
                 "`updated_at`," +
-                "`cash_value`,`cash`,`error_code`,`error_message`,`error_status`) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON " +
+                "`cash_value`,`cash`,`error_code`,`error_message`,`error_status`,`comment`,`diff`,`new_buy_count`) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?," +
+                "?,?," +
+                "?," +
+                "?," +
+                "?,?" +
+                ") ON " +
                 "DUPLICATE KEY UPDATE `status` = VALUES(`status`),`prev_bebalancing_id` = VALUES(`prev_bebalancing_id`),`created_at` = VALUES" +
                 "(`created_at`),`updated_at` = VALUES(`updated_at`),`cash_value` = VALUES(`cash_value`),`cash` = VALUES(`cash`)," +
-                "`error_code` = VALUES(`error_code`),`error_message` = VALUES(`error_message`),`error_status` = VALUES(`error_status`);";
+                "`error_code` = VALUES(`error_code`),`error_message` = VALUES(`error_message`),`error_status` = " +
+                "VALUES(`error_status`),`category` = VALUES(`category`),`exe_strategy` = VALUES(`exe_strategy`),`comment` = VALUES(`comment`),`diff` = VALUES(`diff`),`new_buy_count` = VALUES(`new_buy_count`);";
     }
 
     /**
@@ -117,9 +135,13 @@ public class SQLBuilder {
      */
     public static String buildRebalancingHistoryInsert() {
         return "INSERT IGNORE INTO `rebalancing_history`(`cube_id`,`id`,`rebalancing_id`,`stock_id`,`stock_name`," +
-                "`stock_symbol`,`weight`,`target_weight`,`change_weight`,`updated_at`) VALUES" +
-                "(?,?,?,?," +
-                "?,?,?,?,?,?);";
+                "`stock_symbol`,`volume`,`price`,`net_value`,`weight`,`target_weight`,`prev_weight`," +
+                "`prev_target_weight`,`prev_weight_adjusted`," +
+                "`prev_volume`,`prev_price`,`prev_net_value`,`proactive`,`created_at`," +
+                "`updated_at`," +
+                "`target_volume`,`prev_target_volume`,`change_weight`) " +
+                "VALUES" +
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
     }
 
     /**
@@ -434,7 +456,7 @@ public class SQLBuilder {
      * @return
      */
     public static String buildAccountFansQuery() {
-        return "SELECT INTERVAL (`followers`,1,10,100,1000,10000,100000) AS `section` ,COUNT(*) FROM `user` " +
+        return "SELECT INTERVAL (`followers_count`,1,10,100,1000,10000,100000) AS `section` ,COUNT(*) FROM `user` " +
                 "GROUP BY `section`;";
     }
 
@@ -454,7 +476,8 @@ public class SQLBuilder {
      * @return
      */
     public static String buildAccountRankQuery() {
-        return "SELECT *,(`followers` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `followers` DESC LIMIT" +
+        return "SELECT *,(`followers_count` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `followers_count`" +
+                " DESC LIMIT" +
                 " 500;";
     }
 
@@ -464,7 +487,8 @@ public class SQLBuilder {
      * @return
      */
     public static String buildAccountRealFansRankQuery() {
-        return "SELECT *,(`followers` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `realFans` DESC LIMIT " +
+        return "SELECT *,(`followers_count` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `realFans` DESC " +
+                "LIMIT " +
                 "500;";
     }
 
@@ -474,7 +498,7 @@ public class SQLBuilder {
      * @return
      */
     public static String buildAccountStatusRankQuery() {
-        return "SELECT *,(`followers` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `status_count` DESC " +
+        return "SELECT *,(`followers_count` - `anonymous_count`) AS `realFans` FROM `user` ORDER BY `status_count` DESC " +
                 "LIMIT 500;";
     }
 

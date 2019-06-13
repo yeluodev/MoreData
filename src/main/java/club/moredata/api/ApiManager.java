@@ -125,15 +125,30 @@ public class ApiManager {
         client.newCall(request).enqueue(callback);
     }
 
+    public Response fetchCubeDetail(String symbol) {
+        String params = "?mix_rebalancing=true&ret_last_buy_rb_gid=true&symbol=" + symbol;
+        Request request = new Request.Builder()
+//                .addHeader("Cookie","xq_a_token=df8524b38974fce13d20b7ee39af90871c03be91;u=5414038194")
+//                .addHeader("Cookie","xq_a_token=0aebf2e32b55e41f30f0042f3e556b5e26206173;u=411560226561917")
+                .url(CUBES_DETAIL + params)
+                .build();
+        try {
+            return client.newCall(request).execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * 获取组合调仓历史
      *
      * @param cubeId
      */
-    public Response fetchRebalancingHistory(int cubeId) {
-        String params = "?count=20&page=1&cube_id=" + cubeId;
+    public Response fetchRebalancingHistory(int cubeId, int page) {
+        String params = "?count=20&page=" + page + "&cube_id=" + cubeId;
         Request request = new Request.Builder()
-                .url(CUBES_DETAIL + params)
+                .url(CUBES_REBALANCING_HISTORY + params)
                 .build();
         try {
             return client.newCall(request).execute();
@@ -147,6 +162,14 @@ public class ApiManager {
         String params = "?count=20&page=1&cube_id=" + cubeId;
         Request request = new Request.Builder()
 //                .addHeader("Cookie","xq_a_token=0aebf2e32b55e41f30f0042f3e556b5e26206173;u=411560226561917")
+                .url(CUBES_REBALANCING_HISTORY + params)
+                .build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void fetchRebalancingHistory(int cubeId, int page, ApiCallback callback) {
+        String params = "?count=20&page=" + page + "&cube_id=" + cubeId;
+        Request request = new Request.Builder()
                 .url(CUBES_REBALANCING_HISTORY + params)
                 .build();
         client.newCall(request).enqueue(callback);
@@ -172,14 +195,15 @@ public class ApiManager {
 
     /**
      * 调仓
+     *
      * @param cubeId
      * @param cash
      * @param holdings
      * @param comment
      */
-    public Response rebalancingCube(int cubeId,int cash,String holdings,String comment){
-        String params = String.format("cash=%d&comment=%s&cube_id=%d&holdings=%s&market=cn", cash,comment,cubeId,holdings);
-        RequestBody body = RequestBody.create(MediaType.parse("text;charset=utf-8"),params);
+    public Response rebalancingCube(int cubeId, int cash, String holdings, String comment) {
+        String params = String.format("cash=%d&comment=%s&cube_id=%d&holdings=%s&market=cn", cash, comment, cubeId, holdings);
+        RequestBody body = RequestBody.create(MediaType.parse("text;charset=utf-8"), params);
 
         Request request = new Request.Builder()
                 .url(CUBES_REBALANCING_CREATE)
@@ -195,15 +219,16 @@ public class ApiManager {
 
     /**
      * 上传图片
+     *
      * @return
      */
-    public Response uploadImage(File file){
+    public Response uploadImage(File file) {
 //        String params = String.format("status=%s&original=0&right=0&is_private=0", content);
 //        RequestBody body = RequestBody.create(MediaType.parse("text;charset=utf-8"),params);
         MediaType MEDIA_TYPE_PNG = MediaType.parse("image/png");
         RequestBody filebody = MultipartBody.create(MEDIA_TYPE_PNG, file);
         MultipartBody.Builder builder = new MultipartBody.Builder();
-        builder.addFormDataPart("file","file.png",filebody);
+        builder.addFormDataPart("file", "file.png", filebody);
         builder.setType(MultipartBody.FORM);
 
 
@@ -221,12 +246,13 @@ public class ApiManager {
 
     /**
      * 发帖
+     *
      * @param content
      * @return
      */
-    public Response newPost(String content){
+    public Response newPost(String content) {
         String params = String.format("status=%s&original=0&right=0&is_private=0", content);
-        RequestBody body = RequestBody.create(MediaType.parse("text;charset=utf-8"),params);
+        RequestBody body = RequestBody.create(MediaType.parse("text;charset=utf-8"), params);
 
         Request request = new Request.Builder()
                 .url(STATUSES_UPDATE)
@@ -242,10 +268,11 @@ public class ApiManager {
 
     /**
      * 搜索雪球组合
+     *
      * @param key
      * @return
      */
-    public SearchResult<Cube> searchCube(String key){
+    public SearchResult<Cube> searchCube(String key) {
         String params = String.format("?count=20&q=%s", key);
         Request request = new Request.Builder()
                 .url(CUBES_SEARCH + params)
@@ -253,12 +280,13 @@ public class ApiManager {
         SearchResult<Cube> searchResult = null;
         try {
             Response response = client.newCall(request).execute();
-            if(response.code()>=200 && response.code()<300){
+            if (response.code() >= 200 && response.code() < 300) {
                 try {
                     String res = response.body().string();
                     System.out.println(res);
                     Gson gson = new Gson();
-                    searchResult = gson.fromJson(res,new TypeToken<SearchResult<Cube>>() {}.getType());
+                    searchResult = gson.fromJson(res, new TypeToken<SearchResult<Cube>>() {
+                    }.getType());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

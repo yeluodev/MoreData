@@ -60,7 +60,6 @@ public class DBPoolConnection {
         }
 
         String webRootPath = DBPoolConnection.class.getClassLoader().getResource("").getPath();
-//        webRootPath = new File(webRootPath).getParent();
         InputStream inputStream = null;
         Properties p =null;
         try {

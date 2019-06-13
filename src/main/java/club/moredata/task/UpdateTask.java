@@ -11,8 +11,8 @@ public class UpdateTask {
     private static UpdateTask instance = null;
 
     public static void main(String[] args) {
-        getInstance().resetUpdateTask();
-//        getInstance().runUpdateTask();
+        UpdateTask task = new UpdateTask();
+        task.resetUpdateTask();
     }
 
     private UpdateTask() {
