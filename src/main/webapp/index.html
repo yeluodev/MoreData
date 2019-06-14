@@ -253,16 +253,13 @@
                 fetchTrackCube(level);
             });
             $('#download').on('click', function () {
-                console.log(type);
-                console.log(level);
-                $('#download').attr('href', 'http://118.25.182.189/moredata/download/' + typeNameArr[type] +
+                $('#download').attr('href', 'http://moredata.club/download/' + typeNameArr[type] +
                     '?level=' + level);
                 // $('#download').attr('href', 'http://localhost:8080/download/' + typeNameArr[type] +
                 //     '?level=' + level);
             });
 
             $('#myModal').on('shown.bs.modal', function (event) {
-                console.log(event);
                 let modal = $(this);
                 let data = trackCubeArr[level].data;
                 let list = data.list;
@@ -293,7 +290,6 @@
             });
 
             $('#switch-mode').on("click", function () {
-                console.log(chartMode);
                 if (chartMode) {
                     $('#data-container').show();
                     $('#chart-container').hide();
@@ -378,7 +374,6 @@
             });
 
             $('#account-overview').on('click', function () {
-                console.log(chartMode);
                 $("a#account-overview>.bottom-line").removeClass("transparent");
                 $("a#account-rank>.bottom-line").addClass("transparent");
                 $('#switch-mode').show();
@@ -462,12 +457,6 @@
             fillChartData(type, level, page);
         });
 
-        function getChoose(data) {
-            console.log('index.html--getChoose');
-            $('iframe').contents().find("#navbarInput-01").val($(data).text());
-            $("#autoSearch").hide();
-        }
-
         /**
          * 填充表格数据
          * @param type
@@ -548,7 +537,7 @@
          */
         function fetchChartData(type, level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&level=' + level);
+            ajax.open('get', 'http://moredata.club/analysis?type=' + type + '&level=' + level);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -633,7 +622,7 @@
          */
         function fetchAccountRank(rankType) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://118.25.182.189/moredata/account/rank/' + rankType);
+            ajax.open('get', 'http://moredata.club/account/rank/' + rankType);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -654,7 +643,7 @@
          */
         function fetchTrackCube(level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://118.25.182.189/moredata/cube/track?level=' + level);
+            ajax.open('get', 'http://moredata.club/cube/track?level=' + level);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -819,7 +808,7 @@
 
 <footer class="flex"
         style="background-color:#F8F8F8;width: 100%;height: 72px;padding:0 72px;flex-direction: row-reverse;">
-    <a href="javascrip:void(0);" style="width:120px;text-align: right;">意见反馈</a>
+    <a href="javascrip:void(0);" style="width:120px;text-align: right;" id="feedback">意见反馈</a>
     <b style="flex:1;text-align: center">数据来源雪球，仅供参考</b>
     <span style="width:120px;"></span>
 </footer>
@@ -840,9 +829,7 @@
      * @param level
      */
     function fetchAccountData(type, index) {
-        console.log('拉取数据画图表')
         if (accountDataArr[index] != null) {
-            console.log('数据不为空')
             if (index < 3) {
                 createAccountTable(type, index);
             } else {
@@ -853,14 +840,13 @@
         }
 
         let ajax = new XMLHttpRequest();
-        ajax.open('get', 'http://118.25.182.189/moredata/account/' + type);
+        ajax.open('get', 'http://moredata.club/account/' + type);
         ajax.send();
         ajax.onreadystatechange = function () {
             if (ajax.readyState === 4 && ajax.status === 200) {
                 let chart = ajax.responseText;
                 chart = JSON.parse(chart);
                 accountDataArr[index] = chart;
-                console.log(chart);
                 if (index < 3) {
                     createAccountTable(type, index);
                 } else {
@@ -877,11 +863,9 @@
 
         list.forEach(function (item, index, array) {
             let tempIndex = parseInt(index / 12) * 2;
-            console.log(tempIndex);
             htmlArr[tempIndex] += '<td style="flex: 1;">' + item['name'] + '</td>';
             htmlArr[tempIndex + 1] += '<td style="flex: 1;">' + item['count'] + '</td>';
         });
-        console.log(htmlArr);
 
         html += '<tr><th>省份</th>' + htmlArr[0] + '</tr>';
         html += '<tr><th>人数</th>' + htmlArr[1] + '</tr>';

@@ -31,7 +31,7 @@ public class SQLBuilder {
                 "?,?,?,?) ON DUPLICATE KEY UPDATE `screen_name` = values(`screen_name`),`description` = values" +
                 "(`description`),`followers_count` = values(`followers_count`),`friends_count` = values(`friends_count`),`photo_domain` " +
                 "= values(`photo_domain`)," +
-                "`profile_image_url` = values(`profile_image_url`)";
+                "`profile_image_url` = values(`profile_image_url`);";
     }
 
     /**

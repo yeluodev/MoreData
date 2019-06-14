@@ -65,6 +65,7 @@ public class CubeTask {
                     fetchRebalancingHistory(connection, cube.getId(), 1);
                     insertRebalancing(connection, cube.getViewRebalancing());
                     insertHoldings(connection, cube.getViewRebalancing());
+                    insertAccount(connection, cube.getOwner());
                     insertCube(connection, cube);
                     //关闭外键约束
                     connection.prepareStatement(SQLBuilder.buildForeignKeyCheck(true)).execute();
@@ -134,7 +135,8 @@ public class CubeTask {
 
     public static void main(String[] args) {
         CubeTask task = new CubeTask();
-        task.updateCubeDetail("ZH1731646");
+        task.updateCubeDetail("ZH715320");
+//        task.fetchCubeList(Util.dealCubeIds("ZH1326651,ZH713034,ZH715320"));
     }
 
     /**
@@ -359,7 +361,7 @@ public class CubeTask {
 
             Jedis redis = RedisUtil.getJedis();
             redis.select(5);
-            redis.zadd("rebHistoryCount",result.getTotalCount(),String.valueOf(cubeId));
+            redis.zadd("rebHistoryCount", result.getTotalCount(), String.valueOf(cubeId));
             redis.select(0);
             redis.close();
 
@@ -421,6 +423,29 @@ public class CubeTask {
                 fetchRebalancingHistory(connection, cubeId, page + 1);
             }
         }
+    }
+
+    /**
+     * 插入调仓详情表
+     *
+     * @param connection
+     * @param account
+     */
+    private void insertAccount(Connection connection, Account account) throws SQLException {
+        if (account == null) {
+            return;
+        }
+
+        PreparedStatement ps = connection.prepareStatement(SQLBuilder.buildAccountInsert());
+        ps.setLong(1, account.getId());
+        ps.setString(2, account.getScreenName());
+        ps.setString(3, account.getDescription());
+        ps.setInt(4, account.getFollowersCount());
+        ps.setInt(5, account.getFriendsCount());
+        ps.setString(6, account.getPhotoDomain());
+        ps.setString(7, account.getProfileImageUrl());
+        ps.execute();
+        ps.close();
     }
 
     /**
@@ -586,6 +611,7 @@ public class CubeTask {
                 fetchRebalancingHistory(connection, cube.getId(), 1);
                 insertRebalancing(connection, cube.getViewRebalancing());
                 insertHoldings(connection, cube.getViewRebalancing());
+                insertAccount(connection, cube.getOwner());
                 insertCube(connection, cube);
                 //关闭外键约束
                 connection.prepareStatement(SQLBuilder.buildForeignKeyCheck(true)).execute();

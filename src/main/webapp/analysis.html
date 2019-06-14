@@ -297,7 +297,6 @@
 
             $('#complete').on('click', function () {
                 cubeIds = $('input[name="tagsinput"].tagsinput').val();
-                console.log(cubeIds);
                 if (cubeIds === "") {
                     $('#cube-container').empty().hide();
                     $('#result-table').empty();
@@ -308,13 +307,11 @@
                     return;
                 }
                 $.ajax({
-                    url: 'http://118.25.182.189/moredata/cube/list?cubeIds=' + cubeIds,
+                    url: 'http://moredata.club/cube/list?cubeIds=' + cubeIds,
                     dataType: "json",
                     success: function (data) {
                         cubeData = data;
                         createCubeList();
-                        console.log(cubeIds);
-                        console.log(data.data.count + '-' + cubeIds.split(',').length);
                         if (data.data.count < cubeIds.split(',').length) {
                             $('#result-table').empty();
                             $('#result-container').hide();
@@ -324,6 +321,7 @@
                     }
                 });
             });
+            $('#complete').click();
 
             selectors.forEach(function (value) {
                 $(value).mouseenter(function () {
@@ -389,14 +387,13 @@
 
             $('#track-cube').on('click', function () {
                 $.ajax({
-                    url: 'http://118.25.182.189/moredata/cube/track?cubeIds=' + cubeIds,
+                    url: 'http://moredata.club/cube/track?cubeIds=' + cubeIds,
                     success: function (data) {
                         trackCubeData = data;
                     }
                 });
             });
             $('#myModal').on('shown.bs.modal', function (event) {
-                console.log(event);
                 let modal = $(this);
                 let data = trackCubeData.data;
                 let list = data.list;
@@ -491,9 +488,8 @@
              */
             function fetchAnalysisResult(type, cubeIds) {
                 $.ajax({
-                    url: 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds,
+                    url: 'http://moredata.club/analysis?type=' + type + '&cubeIds=' + cubeIds,
                     success: function (data) {
-                        console.log(data);
                         chartsArr[type] = data;
                         fillTableData(type, cubeIds, 1, false);
                     }
@@ -590,9 +586,8 @@
         function insertAndCopy(tag, symbol) {
             //步骤：发起请求入库->弹框提示正在入库，请稍后再进行分析->提醒用户删除tag,输入复制好的组合ID->再次点击分析->得到完整结果
             $.ajax({
-                url: 'http://118.25.182.189/moredata/cube/insert?symbol=' + symbol,
+                url: 'http://moredata.club/cube/insert?symbol=' + symbol,
                 success: function (data) {
-                    console.log(data);
                     let oInput = document.createElement('input');
                     oInput.value = symbol;
                     document.body.appendChild(oInput);
