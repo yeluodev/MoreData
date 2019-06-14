@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 雪球组合相关任务
@@ -28,16 +29,18 @@ import java.util.List;
  */
 public class CubeTask {
 
-    private int reqCount = 1;
+    private int reqCount = 0;
 
     /**
      * 将所有组合插入Redis待更新队列
      */
     public void updatePendingList() {
         List<Cube> cubes = fetchCubeList();
-        Jedis jedis = RedisUtil.getJedis();
-        cubes.forEach(cube -> jedis.sadd("pendingCube", cube.getSymbol()));
-        jedis.close();
+        Jedis redis = RedisUtil.getJedis();
+        redis.select(4);
+        cubes.forEach(cube -> redis.zadd("pendingCube", cube.getFollowerCount(), cube.getSymbol()));
+        redis.select(0);
+        redis.close();
     }
 
     /**
@@ -114,7 +117,9 @@ public class CubeTask {
      */
     private void moveRedisMember(String source, String des, String member) {
         Jedis redis = RedisUtil.getJedis();
+        redis.select(4);
         redis.smove(source, des, member);
+        redis.select(0);
         redis.close();
     }
 
@@ -127,22 +132,35 @@ public class CubeTask {
         updateCubeDetail(symbol, false);
     }
 
+    public static void main(String[] args) {
+        CubeTask task = new CubeTask();
+        task.updateCubeDetail("ZH1731646");
+    }
+
     /**
-     * 更新组合详情--计划任务更新
+     * 查找redis待更新组合队列中最晚更新的10个组合
      */
-    public void updateCubeDetail() {
-        //请求太频繁接口报错
-        if (reqCount > 10) {
-            //System.exit(0)会导致Tomcat服务器停止
-            return;
-        }
+    public void updateOldestUpdateCubes() {
         Jedis redis = RedisUtil.getJedis();
-        String symbol = redis.srandmember("pendingCube");
-        //若待更新集合中已无成员，终止任务
-        if (symbol == null) {
+        redis.select(4);
+        Set<String> set = redis.zrevrangeByScore("pendingCube", "+inf", "-inf", 0, 10);
+        symbolList.addAll(set);
+        redis.select(0);
+        redis.close();
+        updateCubeDetail();
+    }
+
+    private List<String> symbolList = new ArrayList<>();
+
+    public void updateCubeDetail() {
+        if (reqCount >= symbolList.size()) {
             return;
         }
-        redis.smove("pendingCube", "fetchingCube", symbol);
+        String symbol = symbolList.get(reqCount);
+        Jedis redis = RedisUtil.getJedis();
+        redis.select(4);
+        redis.zrem("pendingCube", symbol);
+        redis.select(0);
         redis.close();
         reqCount++;
         updateCubeDetail(symbol, true);
@@ -158,28 +176,20 @@ public class CubeTask {
         List<Cube> cubeList = new ArrayList<>();
         try {
             connection = DBPoolConnection.getInstance().getConnection();
-            //组合更新时间距当前时间超出6小时以上，添加入待更新队列
-            String sql = "SELECT * FROM `cube` WHERE TIMESTAMPDIFF(HOUR,`latest_updated_at`,NOW()) > 6 ORDER BY " +
-                    "`latest_updated_at` ASC;";
+            //组合更新时间距当前时间超出6小时以上，添加入待更新队列，因为是redis有序列表，这里查询不需要排序，排除已关停组合
+            String sql = "SELECT `id`,`symbol`,TIMESTAMPDIFF(SECOND ,`latest_updated_at`,NOW()) AS `timediff` FROM " +
+                    "`cube` WHERE TIMESTAMPDIFF(HOUR,`latest_updated_at`,NOW()) > 6 AND `closed_at` > 0;";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                Cube cube = new Cube();
-                cube.setSymbol(resultSet.getString(4));
-                cube.setId(resultSet.getInt(2));
-                cubeList.add(cube);
-            }
+            addResultToList(cubeList, resultSet);
             preparedStatement.close();
 
-            //调仓历史未更新完毕的组合
-            sql = "SELECT `symbol` FROM `cube` WHERE `id` IN (SELECT `cube_id` FROM `view_rebalancing` WHERE `cube_id` NOT IN (SELECT `cube_id` FROM `view_rebalancing` WHERE `prev_bebalancing_id` = 0) GROUP BY `cube_id`);";
+            //调仓历史未更新完毕的组合，因为是redis有序列表，这里查询不需要排序
+            sql = "SELECT `id`,`symbol`,TIMESTAMPDIFF(SECOND ,`latest_updated_at`,NOW()) AS `timediff` FROM `cube` " +
+                    "WHERE `id` IN (SELECT `cube_id` FROM `view_rebalancing` WHERE `cube_id` NOT IN (SELECT `cube_id` FROM `view_rebalancing` WHERE `prev_bebalancing_id` = 0) GROUP BY `cube_id`)";
             PreparedStatement ps = connection.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Cube cube = new Cube();
-                cube.setSymbol(resultSet.getString(1));
-                cubeList.add(cube);
-            }
+            addResultToList(cubeList, rs);
             ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -193,6 +203,18 @@ public class CubeTask {
             }
         }
         return cubeList;
+    }
+
+    private List<Cube> addResultToList(List<Cube> list, ResultSet rs) throws SQLException {
+        while (rs.next()) {
+            Cube cube = new Cube();
+            cube.setId(rs.getInt(1));
+            cube.setSymbol(rs.getString(2));
+            //用follower_count字段暂时存储时间差（second）
+            cube.setFollowerCount(rs.getInt(3));
+            list.add(cube);
+        }
+        return list;
     }
 
     /**
@@ -336,12 +358,12 @@ public class CubeTask {
             }.getType());
 
             Jedis redis = RedisUtil.getJedis();
-            redis.select(2);
-            redis.set(String.valueOf(cubeId),String.valueOf(result.getTotalCount()));
+            redis.select(5);
+            redis.zadd("rebHistoryCount",result.getTotalCount(),String.valueOf(cubeId));
             redis.select(0);
             redis.close();
 
-            if (result == null || result.getList() == null || result.getList().size() == 0) {
+            if (result.getList() == null || result.getList().size() == 0) {
                 return;
             }
 

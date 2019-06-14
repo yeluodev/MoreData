@@ -56,7 +56,8 @@ public class SQLBuilder {
                 " DUPLICATE KEY UPDATE `name` = VALUES(`name`),`description` = VALUES(`description`),`follower_count` = VALUES(`follower_count`),`active_flag`" +
                 " = VALUES(`active_flag`),`updated_at` = VALUES(`updated_at`),`daily_gain` = VALUES(`daily_gain`),`monthly_gain` = VALUES(`monthly_gain`),`total_gain` = " +
                 "VALUES(`total_gain`),`net_value` = VALUES(`net_value`),`rank_percent` = VALUES(`rank_percent`),`tag` = VALUES(`tag`),`view_rebalancing` = " +
-                "VALUES(`view_rebalancing`),`closed_at` = VALUES(`closed_at`);";
+                "VALUES(`view_rebalancing`),`closed_at` = VALUES(`closed_at`),`latest_updated_at` = CURRENT_TIMESTAMP" +
+                "();";
     }
 
     /**

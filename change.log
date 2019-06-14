@@ -10,13 +10,33 @@
         粉丝值排行/发言数排行
         自定义配置---任选雪球组合进行分析
 
-    1.0.2--now
+    1.0.2
         爬取用户分析的组合入库     DONE
         全部调仓历史             DONE
-        如何获取组合的历史持仓
-            show.json
-            非交易时段调仓,view_rebalancing变化
-                status:pending->success
-                holdings永远都是当前的持仓情况,所以应该无法抓取历史持仓情况
-                GET /cubes/show.json?mix_rebalancing=true&ret_last_buy_rb_gid=true&symbol=ZH1326039&_=1560333086983&x=0.127&_s=6a92b2&_t=7B48A64F-9898-41DD-B5C9-5E6498EC3AF6.9084578148.1560328564055.1560328702402 HTTP/1.1
 
+    1.0.3--now
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            计算持仓历史
+                分类情况，盘中不进行计算，盘后处理
+                    昨日  比重  个股净值  组合净值(已知项)  今日(已知项)  比重(已知项)  个股净值(已知项)  组合净值(已知项)
+                    0     0     0       cNetValue1    s2          sPercent2   sNetValue2     cNetValue2
+                    s1    sP1   sN1     cNetValue1    0           0           0              cNetValue2
+                    s1    sP1   sN1     cNetValue1    s2          sPercent2   sNetValue2     cNetValue2
+
+
+                今日买入个股0->10%
+                今日买入个股5->10%
+                    sN1=cNetValue1*sP1  sN2=cNetValue2*sPercent2

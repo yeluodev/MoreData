@@ -32,7 +32,7 @@ public class UpdateTask {
 
     public void runUpdateTask() {
         CubeTask task = new CubeTask();
-        task.updateCubeDetail();
+        task.updateOldestUpdateCubes();
     }
 
     /**
@@ -40,7 +40,10 @@ public class UpdateTask {
      */
     public void resetUpdateTask() {
         Jedis redis = RedisUtil.getJedis();
+        //组合更新数据库
+        redis.select(4);
         redis.flushDB();
+        redis.select(0);
         redis.close();
 
         CubeTask task = new CubeTask();
