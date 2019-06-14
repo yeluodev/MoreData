@@ -496,6 +496,7 @@ public class CubeTask {
             holdingsInsertPs.setDouble(3, holdings.getWeight());
             holdingsInsertPs.setString(4, holdings.getSegmentName());
             holdingsInsertPs.setInt(5, holdings.getSegmentId());
+            //holding存在stock_name、stock_symbol的异常情况，修改相关字段可空
             holdingsInsertPs.setString(6, holdings.getStockName());
             holdingsInsertPs.setString(7, holdings.getStockSymbol());
             holdingsInsertPs.setString(8, holdings.getSegmentColor());

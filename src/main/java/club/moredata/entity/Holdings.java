@@ -59,7 +59,7 @@ public class Holdings implements Serializable {
     }
 
     public String getStockName() {
-        return stockName;
+        return stockName == null ? "" : stockName;
     }
 
     public void setStockName(String stockName) {
@@ -67,7 +67,7 @@ public class Holdings implements Serializable {
     }
 
     public String getStockSymbol() {
-        return stockSymbol;
+        return stockSymbol == null ? "" : stockSymbol;
     }
 
     public void setStockSymbol(String stockSymbol) {
