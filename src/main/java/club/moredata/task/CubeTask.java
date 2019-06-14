@@ -178,9 +178,9 @@ public class CubeTask {
         List<Cube> cubeList = new ArrayList<>();
         try {
             connection = DBPoolConnection.getInstance().getConnection();
-            //组合更新时间距当前时间超出6小时以上，添加入待更新队列，因为是redis有序列表，这里查询不需要排序，排除已关停组合
+            //组合更新时间距当前时间超出6小时以上，添加入待更新队列，因为是redis有序列表，这里查询不需要排序，排除已关停组合(=0代表未关停)
             String sql = "SELECT `id`,`symbol`,TIMESTAMPDIFF(SECOND ,`latest_updated_at`,NOW()) AS `timediff` FROM " +
-                    "`cube` WHERE TIMESTAMPDIFF(HOUR,`latest_updated_at`,NOW()) > 6 AND `closed_at` > 0;";
+                    "`cube` WHERE TIMESTAMPDIFF(HOUR,`latest_updated_at`,NOW()) > 6 AND `closed_at` = 0;";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             addResultToList(cubeList, resultSet);
