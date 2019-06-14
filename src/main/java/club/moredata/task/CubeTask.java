@@ -629,6 +629,8 @@ public class CubeTask {
                 Account owner = new Account();
                 owner.setId(resultSet.getLong(5));
                 owner.setScreenName(resultSet.getString(10));
+                owner.setPhotoDomain(resultSet.getString(11));
+                owner.setProfileImageUrl(resultSet.getString(12));
                 cube.setOwner(owner);
                 cube.setFollowerCount(resultSet.getInt(6));
                 cube.setNetValue(resultSet.getFloat(7));

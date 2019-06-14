@@ -490,19 +490,6 @@
              * @param cubeIds
              */
             function fetchAnalysisResult(type, cubeIds) {
-                // let ajax = new XMLHttpRequest();
-                // ajax.open('get', 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds);
-                // ajax.send();
-                // ajax.onreadystatechange = function () {
-                //     if (ajax.readyState === 4 && ajax.status === 200) {
-                //         let chart = ajax.responseText;
-                //         console.log(chart);
-                //         chart = JSON.parse(chart);
-                //         chartsArr[type] = chart;
-                //         fillTableData(type, cubeIds, 1, false);
-                //     }
-                // }
-
                 $.ajax({
                     url: 'http://118.25.182.189/moredata/analysis?type=' + type + '&cubeIds=' + cubeIds,
                     success: function (data) {
@@ -530,7 +517,6 @@
                 let data = cubeData.data;
                 let list = data.list;
 
-                console.log("data=="+data.count);
                 if (data.count > 0) {
                     let html = '';
                     html += '<div class="flex">';
@@ -581,7 +567,17 @@
                     html += '<div style="flex: 1;font-size: 16px;padding: 4px 8px;overflow: hidden;">' + cube['description'] + '</div>';
                     html += '<div class="flex">';
                     html += '<div style="flex:1;"><h4 style="font-weight: 900;">' + cube['netValue'] + '</h4></div>';
-                    html += '<img src="//xavatar.imedao.com/community/20183/1523249099664-1523249099851.jpg!50x50.png" class="avatar">';
+                    let owner = cube['owner'];
+                    let domain = owner['photoDomain'];
+                    domain = domain === '' ? '//xavatar.imedao.com/' : domain;
+                    let profileImageUrls = owner['profileImageUrl'].split(',');
+                    let avatarUrl = profileImageUrls[0];
+                    profileImageUrls.forEach(function (url) {
+                        if (url.match(/^community\S*50x50(.png|.jpg|.jpeg)$/)) {
+                            avatarUrl = url;
+                        }
+                    });
+                    html += '<img src="' + domain + avatarUrl + '" class="avatar">';
                     html += '<div style="margin: 0 0 0 12px;">' + cube['owner']['screenName'] + '</div>';
                     html += '</div></a>';
                 });
@@ -652,7 +648,7 @@
 
     <div class="tagsinput-primary search-bar" style="position:relative;z-index:100;">
         <a id="complete" class="btn" style="margin: auto 0 auto 36px;" href="#fakelink">选择完毕，进行分析</a>
-        <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="1377622,1423409"/>
+        <input name="tagsinput" class="tagsinput" data-role="tagsinput" value="ZH1968637,ZH1968638,ZH1968639"/>
     </div>
 
     <div class="card" id="cube-container" style="display: none;background-color: transparent;box-shadow: none;">

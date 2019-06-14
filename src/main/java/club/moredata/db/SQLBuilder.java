@@ -560,7 +560,10 @@ public class SQLBuilder {
      * @return
      */
     public static String buildSpecifiedCubeQuery(String ids) {
-        String sql = "SELECT `cube`.`id`,`cube`.`name`,`cube`.`symbol`,`cube`.`description`,`cube`.`owner_id`,`cube`.`follower_count`,`cube`.`net_value`,`cube`.`created_at`,`cube`.`updated_at`,`user`.`screen_name` FROM `cube`,`user` WHERE (`cube`.`id` IN (%s) OR `cube`.`symbol` IN (%s)) AND `cube`.`owner_id` = `user`.`id`;";
+        String sql = "SELECT `cube`.`id`,`cube`.`name`,`cube`.`symbol`,`cube`.`description`,`cube`.`owner_id`,`cube`" +
+                ".`follower_count`,`cube`.`net_value`,`cube`.`created_at`,`cube`.`updated_at`,`user`.`screen_name`," +
+                "`user`.`photo_domain`,`user`.`profile_image_url` FROM `cube`,`user` WHERE (`cube`.`id` IN (%s) OR " +
+                "`cube`.`symbol` IN (%s)) AND `cube`.`owner_id` = `user`.`id`;";
         return String.format(sql, ids, ids);
     }
 
