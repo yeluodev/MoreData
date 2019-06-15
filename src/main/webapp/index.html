@@ -253,7 +253,7 @@
                 fetchTrackCube(level);
             });
             $('#download').on('click', function () {
-                $('#download').attr('href', 'http://moredata.club/download/' + typeNameArr[type] +
+                $('#download').attr('href', 'http://118.25.182.189:8080/moredata/download/' + typeNameArr[type] +
                     '?level=' + level);
                 // $('#download').attr('href', 'http://localhost:8080/download/' + typeNameArr[type] +
                 //     '?level=' + level);
@@ -511,7 +511,7 @@
                     if (value === 'percent'
                         || value === 'percentWithCash'
                         || value === 'netValue') {
-                        html += '<td>' + item[value].toFixed(type === 3 ? 6 : 4) + '</td>';
+                        html += '<td>' + item[value].toFixed(4) + '</td>';
                     } else {
                         html += '<td>' + item[value] + '</td>';
                     }
@@ -537,7 +537,7 @@
          */
         function fetchChartData(type, level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://moredata.club/analysis?type=' + type + '&level=' + level);
+            ajax.open('get', 'http://118.25.182.189:8080/moredata/analysis?type=' + type + '&level=' + level);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -622,7 +622,7 @@
          */
         function fetchAccountRank(rankType) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://moredata.club/account/rank/' + rankType);
+            ajax.open('get', 'http://118.25.182.189:8080/moredata/account/rank/' + rankType);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -643,7 +643,7 @@
          */
         function fetchTrackCube(level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'http://moredata.club/cube/track?level=' + level);
+            ajax.open('get', 'http://118.25.182.189:8080/moredata/cube/track?level=' + level);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -840,7 +840,7 @@
         }
 
         let ajax = new XMLHttpRequest();
-        ajax.open('get', 'http://moredata.club/account/' + type);
+        ajax.open('get', 'http://118.25.182.189:8080/moredata/account/' + type);
         ajax.send();
         ajax.onreadystatechange = function () {
             if (ajax.readyState === 4 && ajax.status === 200) {
