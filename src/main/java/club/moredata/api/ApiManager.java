@@ -8,6 +8,7 @@ import okhttp3.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,21 +18,22 @@ import java.util.concurrent.TimeUnit;
  */
 public class ApiManager {
 
-    private static String ROOT_HOST = "https://api.xueqiu.com";
-    private static String USER = ROOT_HOST + "/user/show.json";
-    private static String CUBES_RANK = ROOT_HOST + "/cubes/rank/arena_cubes.json";
-    private static String CUBES_DETAIL = ROOT_HOST + "/cubes/show.json";
-    private static String CUBES_REBALANCING_HISTORY = ROOT_HOST + "/cubes/rebalancing/history.json";
-    private static String STOCK_QUOTEP = ROOT_HOST + "/stock/quotep.json";
-    private static String STATUSES_UPDATE = ROOT_HOST + "/statuses/update.json";
-    private static String PHOTO_UPLOAD = ROOT_HOST + "/photo/upload.json";
-    private static String CUBES_REBALANCING_CREATE = ROOT_HOST + "/cubes/rebalancing/create.json";
-    private static String CUBES_SEARCH = ROOT_HOST + "/cube/search.json";
+    static String ROOT_HOST = "https://api.xueqiu.com";
+    static String USER = ROOT_HOST + "/user/show.json";
+    static String CUBES_RANK = ROOT_HOST + "/cubes/rank/arena_cubes.json";
+    static String CUBES_DETAIL = ROOT_HOST + "/cubes/show.json";
+    static String CUBES_REBALANCING_HISTORY = ROOT_HOST + "/cubes/rebalancing/history.json";
+    static String STOCK_QUOTEP = ROOT_HOST + "/stock/quotep.json";
+    static String STATUSES_UPDATE = ROOT_HOST + "/statuses/update.json";
+    static String PHOTO_UPLOAD = ROOT_HOST + "/photo/upload.json";
+    static String CUBES_REBALANCING_CREATE = ROOT_HOST + "/cubes/rebalancing/create.json";
+    static String CUBES_SEARCH = ROOT_HOST + "/cube/search.json";
+    static String FOLLOWERS = ROOT_HOST + "/friendships/followers.json";
 
     private static ApiManager instance;
-    private OkHttpClient client;
+    protected OkHttpClient client;
 
-    private ApiManager() {
+    public ApiManager() {
         Dispatcher dispatcher = new Dispatcher();
         dispatcher.setMaxRequestsPerHost(60);
 
@@ -55,28 +57,17 @@ public class ApiManager {
         return instance;
     }
 
-    /**
-     * 获取雪球用户信息
-     *
-     * @param uid 用户id
-     */
-    public void getAccount(String uid) {
-        Request request = new Request.Builder()
-                .url(USER + "?id=" + uid)
-                .build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
+    protected Request buildRequest(String url, Map<String, String> headers, RequestBody body) {
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(url);
+        if (headers != null && !headers.isEmpty()) {
+            headers.forEach(requestBuilder::header);
+        }
+        if (body != null) {
+            requestBuilder.post(body);
+        }
 
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.code() >= 200 && response.code() < 300) {
-                    System.out.println(response.body().string());
-                }
-            }
-        });
+        return requestBuilder.build();
     }
 
     /**
@@ -182,7 +173,7 @@ public class ApiManager {
         //自动调仓账号是固定的，因此只能是QQ登录的账号Cookie
         Request request = new Request.Builder()
                 .url(CUBES_REBALANCING_CREATE)
-                .header("Cookie","xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
+                .header("Cookie", "xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
                 .post(body)
                 .build();
         try {
@@ -207,7 +198,7 @@ public class ApiManager {
 
         Request request = new Request.Builder()
                 .url(PHOTO_UPLOAD)
-                .header("Cookie","xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
+                .header("Cookie", "xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
                 .post(builder.build())
                 .build();
         try {
@@ -230,7 +221,7 @@ public class ApiManager {
 
         Request request = new Request.Builder()
                 .url(STATUSES_UPDATE)
-                .header("Cookie","xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
+                .header("Cookie", "xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
                 .post(body)
                 .build();
         try {

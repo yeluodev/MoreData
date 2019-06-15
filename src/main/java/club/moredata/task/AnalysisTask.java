@@ -19,7 +19,6 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -66,7 +65,7 @@ public class AnalysisTask {
 
 //        task.getLatestUpdateTime(1, 30);
 //        task.snowballCubeList(1);
-        LeekResult result = task.stockRankList("1773085, 1359749, 1392200, 52627, 1423409, 1387791",6,
+        LeekResult result = task.stockRankList("1773085, 1359749, 1392200, 52627, 1423409, 1387791", 6,
                 34, false, OrderType.WEIGHT_DESC);
         System.out.println(JSON.toJSONString(result));
     }
@@ -429,7 +428,7 @@ public class AnalysisTask {
                 alsRebalancing.setStockName(resultSet.getString(1));
                 alsRebalancing.setStockSymbol(resultSet.getString(2));
                 alsRebalancing.setChangWeight(resultSet.getDouble(3));
-                alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeLimit * 100.0, 8));
+                alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeLimit, 8));
                 alsRebalancingList.add(alsRebalancing);
             }
             rebalancingPs.close();
@@ -601,7 +600,7 @@ public class AnalysisTask {
      * @param orderType
      * @return
      */
-    public LeekResult<AlsStock> stockRankList(String cubeIds,int cubeSize, int stockLimit,
+    public LeekResult<AlsStock> stockRankList(String cubeIds, int cubeSize, int stockLimit,
                                               boolean removeSuspensionStock,
                                               OrderType orderType) {
         LeekResult<AlsStock> leekResult = null;
@@ -627,9 +626,9 @@ public class AnalysisTask {
             suspensionIds = removeSuspensionStock ? fetchQuotep(stockIdList, stockLimit) : "";
 
             PreparedStatement leekStockPs =
-                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeStockRankQuery(cubeIds, suspensionIds,orderType));
-            leekStockPs.setInt(1,stockLimit);
-            leekStockPs.setInt(2,stockLimit);
+                    connection.prepareStatement(SQLBuilder.buildSpecifiedCubeStockRankQuery(cubeIds, suspensionIds, orderType));
+            leekStockPs.setInt(1, stockLimit);
+            leekStockPs.setInt(2, stockLimit);
             ResultSet resultSet = leekStockPs.executeQuery();
             int rank = 0;
             List<AlsStock> alsStockList = new ArrayList<>();
@@ -644,7 +643,7 @@ public class AnalysisTask {
                 alsStock.setSegmentColor(resultSet.getString(5));
                 alsStock.setWeight(resultSet.getDouble(6));
                 alsStock.setCount(resultSet.getInt(7));
-                alsStock.setPercent(resultSet.getDouble(8)>100?100:resultSet.getDouble(8));
+                alsStock.setPercent(resultSet.getDouble(8) > 100 ? 100 : resultSet.getDouble(8));
                 double percentWithCash = Arith.div(Arith.mul(Arith.sub(100, cash), resultSet.getDouble(8)), 100, 6);
                 alsStock.setPercentWithCash(percentWithCash);
                 alsStockList.add(alsStock);
@@ -679,7 +678,7 @@ public class AnalysisTask {
      * @param orderType
      * @return
      */
-    public LeekResult<AlsSegment> segmentRankList(String cubeIds,int cubeSize, OrderType orderType) {
+    public LeekResult<AlsSegment> segmentRankList(String cubeIds, int cubeSize, OrderType orderType) {
         LeekResult<AlsSegment> leekResult = null;
         Connection connection = null;
 
@@ -746,7 +745,7 @@ public class AnalysisTask {
      * @param rebalancingType
      * @return
      */
-    public LeekResult<AlsRebalancing> rebalancingRankList(String cubeIds,int cubeSize,OrderType orderType,
+    public LeekResult<AlsRebalancing> rebalancingRankList(String cubeIds, int cubeSize, OrderType orderType,
                                                           RebalancingType rebalancingType) {
         String diaplayDate = DateUtil.getInstance().transactionDataDate(System.currentTimeMillis());
         Connection connection = null;
@@ -757,7 +756,7 @@ public class AnalysisTask {
             Date date = new SimpleDateFormat("yyyyMMdd").parse(diaplayDate);
             long startTimestamp = DateUtil.getInstance().getDayStartTimestamp(date);
             long endTimestamp = DateUtil.getInstance().getDayEndTimestamp(date);
-            PreparedStatement rebalancingPs = connection.prepareStatement(SQLBuilder.buildSpecifiedCubeRebalancingRankQuery(cubeIds,orderType, rebalancingType));
+            PreparedStatement rebalancingPs = connection.prepareStatement(SQLBuilder.buildSpecifiedCubeRebalancingRankQuery(cubeIds, orderType, rebalancingType));
             rebalancingPs.setLong(1, startTimestamp);
             rebalancingPs.setLong(2, endTimestamp);
             ResultSet resultSet = rebalancingPs.executeQuery();
@@ -770,7 +769,7 @@ public class AnalysisTask {
                 alsRebalancing.setStockName(resultSet.getString(1));
                 alsRebalancing.setStockSymbol(resultSet.getString(2));
                 alsRebalancing.setChangWeight(resultSet.getDouble(3));
-                alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeSize * 100.0, 8));
+                alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeSize, 8));
                 alsRebalancingList.add(alsRebalancing);
             }
             rebalancingPs.close();

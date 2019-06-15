@@ -6,6 +6,7 @@ import java.io.Serializable;
 
 /**
  * 雪球账户详情
+ *
  * @author yeluodev1226
  */
 public class Account implements Serializable {
@@ -59,11 +60,11 @@ public class Account implements Serializable {
     private String recommend;
     private String intro;
     @SerializedName("stock_status_count")
-    private Object stockStatusCount;
+    private int stockStatusCount;
     @SerializedName("allow_all_stock")
     private boolean allowAllStock;
     @SerializedName("stocks_count")
-    private Object stocksCount;
+    private int stocksCount;
     @SerializedName("photo_domain")
     private String photoDomain;
     @SerializedName("profile_image_url")
@@ -75,6 +76,31 @@ public class Account implements Serializable {
     @SerializedName("screenname_pinyin")
     private String screennamePinyin;
     private int realFans = 0;
+    @SerializedName("cube_count")
+    private int cubeCount;
+    @SerializedName("verified_realname")
+    private boolean verifiedRealname;
+
+    private int page;
+    private int maxPage;
+    private int anonymousCount;
+    private boolean finished;
+
+    public int getCubeCount() {
+        return cubeCount;
+    }
+
+    public void setCubeCount(int cubeCount) {
+        this.cubeCount = cubeCount;
+    }
+
+    public boolean isVerifiedRealname() {
+        return verifiedRealname;
+    }
+
+    public void setVerifiedRealname(boolean verifiedRealname) {
+        this.verifiedRealname = verifiedRealname;
+    }
 
     public int getRank() {
         return rank;
@@ -101,7 +127,7 @@ public class Account implements Serializable {
     }
 
     public String getRemark() {
-        return remark==null?"":remark;
+        return remark == null ? "" : remark;
     }
 
     public void setRemark(String remark) {
@@ -109,7 +135,7 @@ public class Account implements Serializable {
     }
 
     public String getRecommendReason() {
-        return recommendReason==null?"":recommendReason;
+        return recommendReason == null ? "" : recommendReason;
     }
 
     public void setRecommendReason(String recommendReason) {
@@ -117,7 +143,7 @@ public class Account implements Serializable {
     }
 
     public String getDomain() {
-        return domain==null?"":domain;
+        return domain == null ? "" : domain;
     }
 
     public void setDomain(String domain) {
@@ -125,7 +151,7 @@ public class Account implements Serializable {
     }
 
     public String getDescription() {
-        return description==null?"":description;
+        return description == null ? "" : description;
     }
 
     public void setDescription(String description) {
@@ -133,7 +159,7 @@ public class Account implements Serializable {
     }
 
     public String getName() {
-        return name==null?"":remark;
+        return name == null ? "" : remark;
     }
 
     public void setName(String name) {
@@ -141,7 +167,7 @@ public class Account implements Serializable {
     }
 
     public String getLocation() {
-        return location==null?"":location;
+        return location == null ? "" : location;
     }
 
     public void setLocation(String location) {
@@ -189,7 +215,7 @@ public class Account implements Serializable {
     }
 
     public String getScreenName() {
-        return screenName==null?"":screenName;
+        return screenName == null ? "" : screenName;
     }
 
     public void setScreenName(String screenName) {
@@ -205,7 +231,7 @@ public class Account implements Serializable {
     }
 
     public String getUrl() {
-        return url==null?"":url;
+        return url == null ? "" : url;
     }
 
     public void setUrl(String url) {
@@ -237,7 +263,7 @@ public class Account implements Serializable {
     }
 
     public String getCity() {
-        return city==null?"":city;
+        return city == null ? "" : city;
     }
 
     public void setCity(String city) {
@@ -245,7 +271,7 @@ public class Account implements Serializable {
     }
 
     public String getGender() {
-        return gender==null?"":gender;
+        return gender == null ? "" : gender;
     }
 
     public void setGender(String gender) {
@@ -261,7 +287,7 @@ public class Account implements Serializable {
     }
 
     public String getProvince() {
-        return province==null?"":province;
+        return province == null ? "" : province;
     }
 
     public void setProvince(String province) {
@@ -269,7 +295,7 @@ public class Account implements Serializable {
     }
 
     public String getBlogDescription() {
-        return blogDescription==null?"":blogDescription;
+        return blogDescription == null ? "" : blogDescription;
     }
 
     public void setBlogDescription(String blogDescription) {
@@ -333,7 +359,7 @@ public class Account implements Serializable {
     }
 
     public String getRecommend() {
-        return recommend==null?"":recommend;
+        return recommend == null ? "" : recommend;
     }
 
     public void setRecommend(String recommend) {
@@ -341,18 +367,18 @@ public class Account implements Serializable {
     }
 
     public String getIntro() {
-        return intro==null?"":intro;
+        return intro == null ? "" : intro;
     }
 
     public void setIntro(String intro) {
         this.intro = intro;
     }
 
-    public Object getStockStatusCount() {
+    public int getStockStatusCount() {
         return stockStatusCount;
     }
 
-    public void setStockStatusCount(Object stockStatusCount) {
+    public void setStockStatusCount(int stockStatusCount) {
         this.stockStatusCount = stockStatusCount;
     }
 
@@ -364,11 +390,11 @@ public class Account implements Serializable {
         this.allowAllStock = allowAllStock;
     }
 
-    public Object getStocksCount() {
+    public int getStocksCount() {
         return stocksCount;
     }
 
-    public void setStocksCount(Object stocksCount) {
+    public void setStocksCount(int stocksCount) {
         this.stocksCount = stocksCount;
     }
 
@@ -397,7 +423,7 @@ public class Account implements Serializable {
     }
 
     public String getNamePinyin() {
-        return namePinyin==null?"":namePinyin;
+        return namePinyin == null ? "" : namePinyin;
     }
 
     public void setNamePinyin(String namePinyin) {
@@ -405,7 +431,7 @@ public class Account implements Serializable {
     }
 
     public String getScreennamePinyin() {
-        return screennamePinyin==null?"":screennamePinyin;
+        return screennamePinyin == null ? "" : screennamePinyin;
     }
 
     public void setScreennamePinyin(String screennamePinyin) {
@@ -418,5 +444,37 @@ public class Account implements Serializable {
 
     public void setRealFans(int realFans) {
         this.realFans = realFans;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public int getMaxPage() {
+        return maxPage;
+    }
+
+    public void setMaxPage(int maxPage) {
+        this.maxPage = maxPage;
+    }
+
+    public int getAnonymousCount() {
+        return anonymousCount;
+    }
+
+    public void setAnonymousCount(int anonymousCount) {
+        this.anonymousCount = anonymousCount;
+    }
+
+    public boolean isFinished() {
+        return finished;
+    }
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
     }
 }
