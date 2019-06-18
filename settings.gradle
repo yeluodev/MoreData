@@ -1,2 +1,5 @@
 rootProject.name = 'MoreData'
+include 'api'
+include 'spider'
+include 'web'
 

@@ -3,3 +3,6 @@
 .gradle/
 .idea/
 build/
+/MoreData.iml
+test/*
+src/test/

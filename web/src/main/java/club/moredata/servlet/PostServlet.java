@@ -33,7 +33,7 @@ public class PostServlet extends BaseServlet {
         }
 
         AutoTask autoTask = new AutoTask();
-        Post post = autoTask.newPost("/var/local/image/club.moredata/source/" + fileName);
+        Post post = autoTask.newPost("/var/local/image/club.club.moredata/source/" + fileName);
         if (post == null) {
             leekResponse = LeekResponse.errorResponse(LeekResponse.ERROR_OTHER, LeekResponse.MSG_ERROR_OTHER);
         } else {

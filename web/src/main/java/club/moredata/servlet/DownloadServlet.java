@@ -15,7 +15,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * @author yeluodev1226
@@ -24,7 +23,7 @@ import java.util.regex.Pattern;
 public class DownloadServlet extends BaseServlet {
 
     private static final long serialVersionUID = 6286626351893740410L;
-        public static final String EXCEL_FILE_PATH = "/var/local/club.moredata/excel/";
+        public static final String EXCEL_FILE_PATH = "/var/local/club.club.moredata/excel/";
 //    public static final String EXCEL_FILE_PATH = "D:/excel/";
 //    public static final String EXCEL_FILE_PATH = "H:/excel/";
 
