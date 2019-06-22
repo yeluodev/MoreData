@@ -307,7 +307,7 @@
                     return;
                 }
                 $.ajax({
-                    url: 'http://www.moredata.club/cube/list?cubeIds=' + cubeIds,
+                    url: 'https://www.moredata.club/cube/list?cubeIds=' + cubeIds,
                     dataType: "json",
                     success: function (data) {
                         cubeData = data;
@@ -387,7 +387,7 @@
 
             $('#track-cube').on('click', function () {
                 $.ajax({
-                    url: 'http://www.moredata.club/cube/track?cubeIds=' + cubeIds,
+                    url: 'https://www.moredata.club/cube/track?cubeIds=' + cubeIds,
                     success: function (data) {
                         trackCubeData = data;
                     }
@@ -488,7 +488,7 @@
              */
             function fetchAnalysisResult(type, cubeIds) {
                 $.ajax({
-                    url: 'http://www.moredata.club/analysis?type=' + type + '&cubeIds=' + cubeIds,
+                    url: 'https://www.moredata.club/analysis?type=' + type + '&cubeIds=' + cubeIds,
                     success: function (data) {
                         chartsArr[type] = data;
                         fillTableData(type, cubeIds, 1, false);
@@ -586,7 +586,7 @@
         function insertAndCopy(tag, symbol) {
             //步骤：发起请求入库->弹框提示正在入库，请稍后再进行分析->提醒用户删除tag,输入复制好的组合ID->再次点击分析->得到完整结果
             $.ajax({
-                url: 'http://www.moredata.club/cube/insert?symbol=' + symbol,
+                url: 'https://www.moredata.club/cube/insert?symbol=' + symbol,
                 success: function (data) {
                     let oInput = document.createElement('input');
                     oInput.value = symbol;
