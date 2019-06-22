@@ -6,3 +6,4 @@ build/
 /MoreData.iml
 test/*
 src/test/
+/data/

@@ -54,7 +54,7 @@ public class AnalysisServlet extends BaseServlet {
             suspension = "1";
         }
         if (orderType == null) {
-            orderType = type.equals("3") ? "5" : "1";
+            orderType = "3".equals(type) ? "5" : "1";
         }
         if (rebalancingType == null) {
             rebalancingType = "1";

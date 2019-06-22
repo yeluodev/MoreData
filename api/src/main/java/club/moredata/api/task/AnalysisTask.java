@@ -65,8 +65,9 @@ public class AnalysisTask {
 
 //        task.getLatestUpdateTime(1, 30);
 //        task.snowballCubeList(1);
-        LeekResult result = task.stockRankList("1773085, 1359749, 1392200, 52627, 1423409, 1387791", 6,
-                34, false, OrderType.WEIGHT_DESC);
+//        LeekResult result = task.stockRankList("1773085, 1359749, 1392200, 52627, 1423409, 1387791", 6,
+//                34, false, OrderType.WEIGHT_DESC);
+        LeekResult result = task.snowballCubeList(1);
         System.out.println(JSON.toJSONString(result));
     }
 

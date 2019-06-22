@@ -6,6 +6,7 @@ import club.moredata.common.entity.Account;
 import club.moredata.common.entity.Cube;
 import club.moredata.common.entity.RankCubeResult;
 import club.moredata.common.util.DBPoolConnection;
+import com.alibaba.fastjson.JSON;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -220,5 +221,48 @@ public class CubeDbHelper {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 返回雪球风云榜组合
+     *
+     * @param level 时间阶段
+     * @param limit 组合数
+     * @return 组合列表
+     */
+    public List<Cube> cubeRankList(int level, int limit) {
+        List<Cube> cubeList = new ArrayList<>();
+        Connection connection = null;
+        try {
+            connection = DBPoolConnection.getInstance().getConnection();
+            PreparedStatement ps = connection.prepareStatement(CubeSQLBuilder.buildCubeRankListQuery());
+            ps.setInt(1, level);
+            ps.setInt(2, limit);
+            ResultSet resultSet = ps.executeQuery();
+            while (resultSet.next()) {
+                Cube cube = new Cube();
+                cube.setRank(resultSet.getInt(1));
+                cube.setName(resultSet.getString(2));
+                cube.setNetValue(resultSet.getFloat(3));
+                cubeList.add(cube);
+            }
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != connection) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return cubeList;
+    }
+
+    public static void main(String[] args) {
+        List<Cube> cubeList = getInstance().cubeRankList(3,4);
+        System.out.println(JSON.toJSONString(cubeList));
     }
 }
