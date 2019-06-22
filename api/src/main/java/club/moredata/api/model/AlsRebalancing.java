@@ -11,7 +11,7 @@ public class AlsRebalancing implements Serializable {
     private int rank = 0;
     private String stockName = "";
     private String stockSymbol = "";
-    private double changWeight = 0;
+    private double changeWeight = 0;
     private double percent = 0;
 
     public int getRank() {
@@ -38,12 +38,12 @@ public class AlsRebalancing implements Serializable {
         this.stockSymbol = stockSymbol;
     }
 
-    public double getChangWeight() {
-        return changWeight;
+    public double getChangeWeight() {
+        return changeWeight;
     }
 
-    public void setChangWeight(double changWeight) {
-        this.changWeight = changWeight;
+    public void setChangeWeight(double changeWeight) {
+        this.changeWeight = changeWeight;
     }
 
     public double getPercent() {

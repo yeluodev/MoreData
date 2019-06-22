@@ -427,7 +427,7 @@ public class AnalysisTask {
                 alsRebalancing.setRank(rank);
                 alsRebalancing.setStockName(resultSet.getString(1));
                 alsRebalancing.setStockSymbol(resultSet.getString(2));
-                alsRebalancing.setChangWeight(resultSet.getDouble(3));
+                alsRebalancing.setChangeWeight(resultSet.getDouble(3));
                 alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeLimit, 8));
                 alsRebalancingList.add(alsRebalancing);
             }
@@ -768,7 +768,7 @@ public class AnalysisTask {
                 alsRebalancing.setRank(rank);
                 alsRebalancing.setStockName(resultSet.getString(1));
                 alsRebalancing.setStockSymbol(resultSet.getString(2));
-                alsRebalancing.setChangWeight(resultSet.getDouble(3));
+                alsRebalancing.setChangeWeight(resultSet.getDouble(3));
                 alsRebalancing.setPercent(Arith.div(resultSet.getDouble(3), cubeSize, 8));
                 alsRebalancingList.add(alsRebalancing);
             }
