@@ -28,11 +28,17 @@ public class AccountServlet extends BaseServlet {
     @Override
     public void dealRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         PrintWriter out = response.getWriter();
+        LeekResponse leekResponse;
 
         String matchPath = request.getHttpServletMapping().getMatchValue();
+        if (matchPath == null) {
+            leekResponse = LeekResponse.errorURLResponse();
+            out.print(JSON.toJSONString(leekResponse));
+            return;
+        }
+
         AccountTask task = new AccountTask();
         LeekResult leekResult = null;
-        LeekResponse leekResponse;
         PropertyFilter propertyFilter = (object, name, value) -> !"cash".equals(name);
         switch (matchPath) {
             //性别分布

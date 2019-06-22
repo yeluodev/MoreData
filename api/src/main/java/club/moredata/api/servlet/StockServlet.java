@@ -15,6 +15,8 @@ import java.io.PrintWriter;
 import java.util.List;
 
 /**
+ * 股票相关接口
+ *
  * @author yeluodev1226
  */
 @WebServlet(name = "StockServlet", urlPatterns = "/stock/*")
@@ -54,19 +56,30 @@ public class StockServlet extends BaseServlet {
                 break;
             case "change/hour":
                 History<Stock> hourHistory = task.oneHourChange();
-                History<Stock> hourChange = new History<>();
-                hourChange.setTitle(hourHistory.getTitle());
-                hourChange.setUpdatedAt(hourHistory.getUpdatedAt());
-                hourChange.setList(hourHistory.getList().subList(20 * (pageInt - 1), 20 * pageInt));
-                out.print(JSON.toJSONString(hourChange));
+                if (hourHistory == null) {
+                    out.print(JSON.toJSONString(LeekResponse.errorResponse(LeekResponse.ERROR_OTHER,
+                            "暂无历史数据，无法展示变化情况")));
+                } else {
+                    printChange(out, hourHistory, pageInt);
+                }
                 break;
             case "change/day":
-                History<Stock> dayChange = task.oneDayChange();
-                out.print(JSON.toJSONString(dayChange));
+                History<Stock> dayHistory = task.oneDayChange();
+                if (dayHistory == null) {
+                    out.print(JSON.toJSONString(LeekResponse.errorResponse(LeekResponse.ERROR_OTHER,
+                            "历史数据不足一天，无法展示变化情况")));
+                } else {
+                    printChange(out, dayHistory, pageInt);
+                }
                 break;
             case "change/week":
-                History<Stock> weekChange = task.oneWeekChange();
-                out.print(JSON.toJSONString(weekChange));
+                History<Stock> weekHistory = task.oneWeekChange();
+                if (weekHistory == null) {
+                    out.print(JSON.toJSONString(LeekResponse.errorResponse(LeekResponse.ERROR_OTHER,
+                            "历史数据不足一周，无法展示变化情况")));
+                } else {
+                    printChange(out, weekHistory, pageInt);
+                }
                 break;
             default:
                 leekResponse = LeekResponse.errorURLResponse();
@@ -74,6 +87,13 @@ public class StockServlet extends BaseServlet {
                 break;
         }
 
-//        out.print(JSON.toJSONString(leekResponse,(PropertyFilter) (object, name, value) -> !"data".equals(name)));
+    }
+
+    private void printChange(PrintWriter pw, History<Stock> history, int page) {
+        History<Stock> weekChange = new History<>();
+        weekChange.setTitle(history.getTitle());
+        weekChange.setUpdatedAt(history.getUpdatedAt());
+        weekChange.setList(history.getList().subList(20 * (page - 1), 20 * page));
+        pw.print(JSON.toJSONString(weekChange));
     }
 }

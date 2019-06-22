@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author yeluodev1226
  */
-@WebServlet(name = "StockServlet", urlPatterns = "/mini/overview")
+@WebServlet(name = "OverviewServlet", urlPatterns = "/mini/overview")
 public class OverviewServlet extends BaseServlet {
     private static final long serialVersionUID = -1575662711817085735L;
 

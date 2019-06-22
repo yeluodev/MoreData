@@ -71,6 +71,29 @@
 
 redis存储
 
+失败请求地址 errorUrlList
+
+1000条请求地址 List<String> pendingUrlList 待请求list
+
+发请求，pendingUrlList取出url进行请求
+
+ip被限制，账号被限制，就要切ip和账号cookie，该条请求返回失败，errorUrlList.add(errorUrl)
+
+1000条跑完，去查errorUrlList,size=0,代表1000条请求已抓取完毕
+size>0,代表有地址是失败的，就等于说把errorUrlList赋给pendingUrlList，再重新跑一次流程
+
+
+redis
+    list PendingUrlList +1000条请求
+    
+    发请求时，从pendingUrlList中pop出一条，进行请求
+    请求失败，就切换ip
+
+
+
+
+
+
 
 
 

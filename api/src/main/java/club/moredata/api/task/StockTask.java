@@ -3,7 +3,6 @@ package club.moredata.api.task;
 import club.moredata.common.model.History;
 import club.moredata.common.model.Stock;
 import club.moredata.common.util.RedisUtil;
-import com.alibaba.fastjson.JSON;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
@@ -105,60 +104,49 @@ public class StockTask {
 
         History<Stock> latestHistory = stockHistoryAt(timeList.get(0));
         History<Stock> lastHistory = stockHistoryAt(timeList.get(1));
-
-        latestHistory.getList().forEach(latestStock -> {
-            for (Stock lastStock : lastHistory.getList()) {
-                if (lastStock.getSymbol().equals(latestStock.getSymbol())) {
-                    latestStock.setFollowersChange(latestStock.getFollowers() - lastStock.getFollowers());
-                    latestStock.setStatusesChange(latestStock.getStatuses() - lastStock.getStatuses());
-                    break;
-                }
-            }
-        });
-
-        latestHistory.getList().sort(Comparator.comparingInt(Stock::getFollowersChange));
-        Collections.reverse(latestHistory.getList());
-        return latestHistory;
+        return getStockChange(latestHistory, lastHistory);
     }
 
     /**
      * 一天内数据变化
-     * TODO 等待实际数据爬取后做
      */
     public History<Stock> oneDayChange() {
         List<Long> timeList = stockHistoryTimeList();
-        //TODO 判断时间跨度，数据库中数据是否满足改条件
+        if (timeList.size() < 24 + 1) {
+            System.out.println("历史数据不足一天");
+            return null;
+        }
 
         History<Stock> latestHistory = stockHistoryAt(timeList.get(0));
-        History<Stock> lastHistory = stockHistoryAt(timeList.get(1));
-
-        latestHistory.getList().forEach(latestStock -> {
-            for (Stock lastStock : lastHistory.getList()) {
-                if (lastStock.getSymbol().equals(latestStock.getSymbol())) {
-                    latestStock.setFollowersChange(latestStock.getFollowers() - lastStock.getFollowers());
-                    latestStock.setStatusesChange(latestStock.getStatuses() - lastStock.getStatuses());
-                    break;
-                }
-            }
-        });
-
-        latestHistory.getList().sort(Comparator.comparingInt(Stock::getFollowersChange));
-        return latestHistory;
+        History<Stock> lastHistory = stockHistoryAt(timeList.get(24));
+        return getStockChange(latestHistory, lastHistory);
     }
 
     /**
      * 一周内数据变化
-     * TODO 假设当前已做到每小时更新一次数据入库
      */
     public History<Stock> oneWeekChange() {
         List<Long> timeList = stockHistoryTimeList();
-        //TODO 判断时间跨度，数据库中数据是否满足改条件
+        if (timeList.size() < 24 * 7 + 1) {
+            System.out.println("历史数据不足一周");
+            return null;
+        }
 
         History<Stock> latestHistory = stockHistoryAt(timeList.get(0));
-        History<Stock> lastHistory = stockHistoryAt(timeList.get(1));
+        History<Stock> lastHistory = stockHistoryAt(timeList.get(24 * 7));
+        return getStockChange(latestHistory, lastHistory);
+    }
 
-        latestHistory.getList().forEach(latestStock -> {
-            for (Stock lastStock : lastHistory.getList()) {
+    /**
+     * 计算变化情况
+     *
+     * @param latest 最新数据
+     * @param last   待计算周期的历史数据
+     * @return 变化情况
+     */
+    private History<Stock> getStockChange(History<Stock> latest, History<Stock> last) {
+        latest.getList().forEach(latestStock -> {
+            for (Stock lastStock : last.getList()) {
                 if (lastStock.getSymbol().equals(latestStock.getSymbol())) {
                     latestStock.setFollowersChange(latestStock.getFollowers() - lastStock.getFollowers());
                     latestStock.setStatusesChange(latestStock.getStatuses() - lastStock.getStatuses());
@@ -167,14 +155,8 @@ public class StockTask {
             }
         });
 
-        latestHistory.getList().sort(Comparator.comparingInt(Stock::getFollowersChange));
-        return latestHistory;
+        latest.getList().sort(Comparator.comparingInt(Stock::getFollowersChange));
+        Collections.reverse(latest.getList());
+        return latest;
     }
-
-    public static void main(String[] args) {
-        StockTask task = new StockTask();
-//        System.out.println(JSON.toJSONString(task.stockHistoryTimeList()));
-        System.out.println(JSON.toJSONString(task.oneHourChange()));
-    }
-
 }
