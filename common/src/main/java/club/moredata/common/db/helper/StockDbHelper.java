@@ -67,8 +67,8 @@ public class StockDbHelper {
             PreparedStatement ps = connection.prepareStatement(StockSQLBuilder.buildStockQuery());
             ResultSet resultSet = ps.executeQuery();
             while (resultSet.next()) {
-                map.put(resultSet.getString(3),
-                        resultSet.getString(2) + "-" + resultSet.getInt(4) + "-" + resultSet.getInt(5));
+                map.put(resultSet.getString(2),
+                        resultSet.getString(1) + "-" + resultSet.getInt(3) + "-" + resultSet.getInt(4));
             }
             ps.close();
         } catch (SQLException e) {

@@ -3,6 +3,7 @@ package club.moredata.api.task;
 import club.moredata.common.model.History;
 import club.moredata.common.model.Stock;
 import club.moredata.common.util.RedisUtil;
+import com.alibaba.fastjson.JSON;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
@@ -38,6 +39,22 @@ public class StockTask {
     }
 
     /**
+     * 返回股票最新信息
+     *
+     * @return 股票信息
+     */
+    public History<Stock> stockInfoAtNow() {
+        return stockHistoryAt(stockHistoryTimeList().get(0));
+    }
+
+    public static void main(String[] args) {
+        History<Stock> history = new StockTask().stockInfoAtNow();
+        history.getList().sort(Comparator.comparingInt(Stock::getFollowers));
+        history.setList(history.getList().subList(0,100));
+        System.out.println(JSON.toJSONString(history));
+    }
+
+    /**
      * 返回某个时间点的股票相关信息
      *
      * @param timestamp 时间戳
@@ -66,11 +83,21 @@ public class StockTask {
         List<Stock> stockList = new ArrayList<>();
         map.forEach((symbol, value) -> {
             String[] arr = value.split("-");
+            int length = arr.length;
+            if (length < 3) {
+                System.out.println("数据有误");
+                return;
+            }
             Stock stock = new Stock();
             stock.setSymbol(symbol);
-            stock.setName(arr[0]);
-            stock.setFollowers(Integer.valueOf(arr[1]));
-            stock.setStatuses(Integer.valueOf(arr[2]));
+            stock.setFollowers(Integer.valueOf(arr[length - 2]));
+            stock.setStatuses(Integer.valueOf(arr[length - 1]));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < length - 2; i++) {
+                sb.append(arr[i]).append("-");
+            }
+            sb.deleteCharAt(sb.length() - 1);
+            stock.setName(sb.toString());
             stockList.add(stock);
         });
         return stockList;

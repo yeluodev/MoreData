@@ -1,5 +1,7 @@
 package club.moredata.common.model;
 
+import club.moredata.common.util.DateUtil;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +13,7 @@ public class History<T> implements Serializable {
     private static final long serialVersionUID = 1919571706476317369L;
 
     private String title;
-    private long updatedAt;
+    private String updatedAt;
     private List<T> list;
 
     public History() {
@@ -19,6 +21,11 @@ public class History<T> implements Serializable {
     }
 
     public History(String title, long updatedAt, List<T> list) {
+        this(title, "", list);
+        this.updatedAt = DateUtil.getInstance().getTimeString(updatedAt);
+    }
+
+    public History(String title, String updatedAt, List<T> list) {
         this.title = title;
         this.updatedAt = updatedAt;
         this.list = list;
@@ -32,11 +39,11 @@ public class History<T> implements Serializable {
         this.title = title;
     }
 
-    public long getUpdatedAt() {
+    public String getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(long updatedAt) {
+    public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
     }
 

@@ -33,6 +33,7 @@ public class ApiManager {
 
     static String ROOT_STOCK_HOST = "https://stock.xueqiu.com";
     static String STOCK_FOLLOWERS = ROOT_STOCK_HOST + "/v5/stock/portfolio/stock/hasexist.json";
+    static String STOCK_LIST = ROOT_STOCK_HOST + "/v5/stock/screener/quote/list.json";
 
     private static ApiManager instance;
     protected OkHttpClient client;

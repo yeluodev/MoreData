@@ -90,7 +90,7 @@
             background-color: rgba(0, 0, 0, 0.2);
         }
 
-        .segment, .dimension {
+        .segment, .dimension, .stock {
             margin-top: 12px;
             margin-bottom: 12px;
             min-width: 100px;
@@ -209,16 +209,36 @@
     <script type="text/javascript" src="macarons.js"></script>
     <script type="text/javascript" src="walden.js"></script>
     <script>
+        let stockChartArr = [];
         let chartsArr = [];
         let type = 1;
         let page = 1;
         let level = 1;
+        let order = 1;
         let maxPage = 1;
         let totalCount = 0;
         let rankType = 'followers';
         let accountRankDataArr = [];
         let rankPage = 1;
         let rankMaxPage = 1;
+        let stockSelectIndex = 1;
+        let stockUrl = "https://www.moredata.club/stock/now?all=true";
+        let stockPage = 1;
+        let stockMaxPage = 1;
+        let stockTotalCount = 0;
+        let stockOrder = 1;
+        let stockHeadKeys = [[],
+            ['序号', '名称', '代码', '关注人数', '相关讨论数'],
+            ['序号', '名称', '代码', '关注人数', '关注数变化', '相关讨论数', '讨论数变化'],
+            ['序号', '名称', '代码', '关注人数', '关注数变化', '相关讨论数', '讨论数变化'],
+            ['序号', '名称', '代码', '关注人数', '关注数变化', '相关讨论数', '讨论数变化']];
+        let stockParamKeys = [[],
+            ['name', 'symbol', 'followers', 'statuses'],
+            ['name', 'symbol', 'followers', 'followersChange', 'statuses', 'statusesChange'],
+            ['name', 'symbol', 'followers', 'followersChange', 'statuses', 'statusesChange'],
+            ['name', 'symbol', 'followers', 'followersChange', 'statuses', 'statusesChange']
+        ];
+        let stockCatIds = ['#now', '#lasthour', '#lastday', '#lastweek'];
 
         let headKeys = [[],
             ['序号', '名称', '代码', '所属板块', '持有组合数', '比重/%', '满仓比重/%'],
@@ -232,12 +252,61 @@
             ['rank', 'stockName', 'stockSymbol', 'percent'],
             ['rank', 'name', 'symbol', 'screenName', 'netValue', 'showDaysCount'],
             ['rank', 'screenName', 'province', 'description', 'statusCount', 'followersCount', 'realFans']];
-        let selectors = ['a.segment', 'a.dimension'];
+        let selectors = ['a.segment', 'a.dimension', 'a.stock'];
         let chartMode = !1;
         let typeNameArr = ['', 'stock', 'segment', 'rebalancing', 'cube'];
 
         $(function () {
-            $('body').addClass('bactive');
+            $('body').addClass('bactive').on('click', '.btn-count', function () {
+                if (order === 3 || order === 4) {
+                    order = 7 - order;
+                } else {
+                    order = 3;
+                }
+                refetchChartData();
+            }).on('click', '.btn-percent', function () {
+                if (order === 1 || order === 2) {
+                    order = 3 - order;
+                } else {
+                    order = 1;
+                }
+                refetchChartData();
+            }).on('click', '.btn-rebalancing', function () {
+                if (order === 5 || order === 6) {
+                    order = 11 - order;
+                } else {
+                    order = 5;
+                }
+                refetchChartData();
+            }).on('click', '#btn-followers', function () {
+                if (stockOrder === 1 || stockOrder === 2) {
+                    stockOrder = 3 - stockOrder;
+                } else {
+                    stockOrder = 1;
+                }
+                refetchStockChartData();
+            }).on('click', '#btn-statuses', function () {
+                if (stockOrder === 3 || stockOrder === 4) {
+                    stockOrder = 7 - stockOrder;
+                } else {
+                    stockOrder = 3;
+                }
+                refetchStockChartData();
+            }).on('click', '#btn-followers-change', function () {
+                if (stockOrder === 5 || stockOrder === 6) {
+                    stockOrder = 11 - stockOrder;
+                } else {
+                    stockOrder = 5;
+                }
+                refetchStockChartData();
+            }).on('click', '#btn-statuses-change', function () {
+                if (stockOrder === 7 || stockOrder === 8) {
+                    stockOrder = 15 - stockOrder;
+                } else {
+                    stockOrder = 7;
+                }
+                refetchStockChartData();
+            });
 
             let iframe = document.getElementById('iframe');
             iframe.onload = function () {
@@ -255,7 +324,7 @@
             $('#download').on('click', function () {
                 $('#download').attr('href', 'https://www.moredata.club/download/' + typeNameArr[type] +
                     '?level=' + level);
-                // $('#download').attr('href', 'http://localhost:8080/download/' + typeNameArr[type] +
+                // $('#download').attr('href', 'https://www.moredata.club/download/' + typeNameArr[type] +
                 //     '?level=' + level);
             });
 
@@ -331,6 +400,38 @@
                 });
             });
 
+            stockCatIds.forEach(function (value) {
+                $(value).on('click', function () {
+                    let index = 1;
+                    let url = "";
+                    let order = 1;
+                    switch (value) {
+                        case '#now':
+                            index = 1;
+                            order = 1;
+                            url = "https://www.moredata.club/stock/now?all=true";
+                            break;
+                        case '#lasthour':
+                            index = 3;
+                            order = 5;
+                            url = "https://www.moredata.club/stock/change/hour?all=true";
+                            break;
+                        case '#lastday':
+                            index = 4;
+                            order = 5;
+                            url = "https://www.moredata.club/stock/change/day?all=true";
+                            break;
+                        case '#lastweek':
+                            index = 5;
+                            order = 5;
+                            url = "https://www.moredata.club/stock/change/week?all=true";
+                            break;
+                    }
+                    stockOrder = order;
+                    fillStockChartData(index, url, 1);
+                });
+            });
+
 
             let catIds = ['#stock', '#segment', '#rebalancing', '#showDays'];
             catIds.forEach(function (value) {
@@ -338,12 +439,15 @@
                     switch (value) {
                         case '#stock':
                             type = 1;
+                            order = 1;
                             break;
                         case '#segment':
                             type = 2;
+                            order = 1;
                             break;
                         case '#rebalancing':
                             type = 3;
+                            order = 5;
                             break;
                         case '#showDays':
                             type = 4;
@@ -454,8 +558,48 @@
                 fillRankTableData(rankType, rankPage);
             });
 
+            $('#stock-last-page').on('click', function () {
+                if (stockMaxPage === 0) {
+                    alert("没有数据");
+                    return;
+                }
+                if (stockPage === 1) {
+                    alert("已是第一页");
+                    return;
+                }
+                stockPage--;
+                fillStockChartData(stockSelectIndex, stockUrl, stockPage);
+            });
+            $('#stock-next-page').on('click', function () {
+                if (stockMaxPage === 0) {
+                    alert("没有数据");
+                    return;
+                }
+                if (stockPage === stockMaxPage) {
+                    alert("已是最后一页");
+                    return;
+                }
+                stockPage++;
+                fillStockChartData(stockSelectIndex, stockUrl, stockPage);
+            });
+
             fillChartData(type, level, page);
+            fillStockChartData(stockSelectIndex, stockUrl, stockPage);
+
+
         });
+
+        function refetchChartData() {
+            chartsArr[type] = [];
+            page = 1;
+            fetchChartData(type, level, page);
+        }
+
+        function refetchStockChartData() {
+            stockChartArr[stockSelectIndex] = [];
+            stockPage = 1;
+            fetchStockChartData(stockSelectIndex, stockUrl);
+        }
 
         /**
          * 填充表格数据
@@ -481,7 +625,31 @@
             let html = "<table><tr>";
 
             headKeys[type].forEach(function (value) {
-                html += '<th>' + value + '</th>';
+                let iconSpan;
+                if (order % 2 === 1) {
+                    iconSpan = '<span class="fui-triangle-down-small"></span>';
+                } else if (order % 2 === 0) {
+                    iconSpan = '<span class="fui-triangle-up-small"></span>';
+                }
+
+                if (value === "持有组合数") {
+                    html +=
+                        '<th class="btn-count"><a href="javascript:void(0);">' + value + ((order === 3 || order === 4)
+                        ? iconSpan : '') + '</a></th>';
+                } else if (value === "比重/%" || value === "满仓比重/%") {
+                    html += '<th class="btn-percent" style="text-align: right"><a href="javascript:void(0);">' + value + ((order
+                        === 1
+                        || order
+                        === 2)
+                        ? iconSpan : '') + '</a></th>';
+                } else if (value === "调仓比重/%") {
+                    html += '<th class="btn-rebalancing" style="text-align: right"><a href="javascript:void(0);">' + value + ((order === 5 ||
+                        order
+                        === 6)
+                        ? iconSpan : '') + '</a></th>';
+                } else {
+                    html += '<th>' + value + '</th>';
+                }
             });
             html += '</tr>';
 
@@ -498,6 +666,12 @@
 
 
                 paramKeys[type].forEach(function (value) {
+                    if ((type === 1 || type === 3) && value === "stockSymbol") {
+                        html += '<td><a target="_blank" href="https://xueqiu.com/S/' + item[value] + '">' +
+                            item[value] + '</a></td>';
+                        return
+                    }
+
                     if (type === 4 && value === 'symbol') {
                         html += '<td><a target="_blank" href="https://xueqiu.com/P/' + item[value] + '">' + item[value] + '</a></td>';
                         return;
@@ -511,7 +685,7 @@
                     if (value === 'percent'
                         || value === 'percentWithCash'
                         || value === 'netValue') {
-                        html += '<td>' + item[value].toFixed(4) + '</td>';
+                        html += '<td style="text-align: right">' + item[value].toFixed(4) + '</td>';
                     } else {
                         html += '<td>' + item[value] + '</td>';
                     }
@@ -537,7 +711,7 @@
          */
         function fetchChartData(type, level) {
             let ajax = new XMLHttpRequest();
-            ajax.open('get', 'https://www.moredata.club/analysis?type=' + type + '&level=' + level);
+            ajax.open('get', 'https://www.moredata.club/analysis?type=' + type + '&level=' + level + '&order=' + order);
             ajax.send();
             ajax.onreadystatechange = function () {
                 if (ajax.readyState === 4 && ajax.status === 200) {
@@ -653,6 +827,131 @@
             }
         }
 
+        /**
+         * 填充表格数据
+         * @param index
+         * @param url
+         * @param page
+         */
+        function fillStockChartData(index, url, page) {
+            if (stockChartArr[index] == null) {
+                fetchStockChartData(index, url);
+                return;
+            }
+
+            let list = [];
+            let updatedAt = "";
+            if (stockChartArr[index].data == null
+                || stockChartArr[index].data.list == null) {
+                // $(stockCatIds[stockSelectIndex - 1]).click();
+                alert(stockChartArr[index].message);
+                stockTotalCount = 0;
+                stockPage = 0;
+                stockMaxPage = 0;
+                updatedAt = "";
+                // return;
+            } else {
+                list = stockChartArr[index].data.list;
+                stockTotalCount = list.length;
+                stockMaxPage = stockTotalCount % 15 === 0 ? stockTotalCount / 15 : Math.ceil(stockTotalCount / 15);
+                updatedAt = stockChartArr[index].data['updatedAt'];
+            }
+            stockSelectIndex = index;
+            stockUrl = url;
+            stockPage = stockMaxPage === 0 ? 0 : page;
+
+            let html = "<table><tr>";
+
+            stockHeadKeys[index].forEach(function (value) {
+                let iconSpan;
+                if (stockOrder % 2 === 1) {
+                    iconSpan = '<span class="fui-triangle-down-small"></span>';
+                } else if (stockOrder % 2 === 0) {
+                    iconSpan = '<span class="fui-triangle-up-small"></span>';
+                }
+
+                if (value === "关注人数") {
+                    html +=
+                        '<th id="btn-followers" style="text-align:right;"><a href="javascript:void(0);">' + value +
+                        ((stockOrder === 1 || stockOrder === 2)
+                            ? iconSpan : '') + '</a></th>';
+                } else if (value === "相关讨论数") {
+                    html += '<th id="btn-statuses"><a href="javascript:void(0);">' + value + ((stockOrder === 3 || stockOrder
+                        === 4)
+                        ? iconSpan : '') + '</a></th>';
+                } else if (value === "关注数变化") {
+                    html += '<th id="btn-followers-change"><a href="javascript:void(0);">' + value + ((stockOrder === 5 ||
+                        stockOrder
+                        === 6)
+                        ? iconSpan : '') + '</a></th>';
+                } else if (value === "讨论数变化") {
+                    html += '<th id="btn-statuses-change"><a href="javascript:void(0);">' + value + ((stockOrder === 7 ||
+                        stockOrder
+                        === 8)
+                        ? iconSpan : '') + '</a></th>';
+                } else {
+                    html += '<th>' + value + '</th>';
+                }
+
+
+                // if (value === "关注人数") {
+                //     html += "<td style='text-align:right;'>" + value + "</td>";
+                // } else {
+                //     html += '<td>' + value + '</td>';
+                // }
+            });
+            html += '</tr>';
+
+            for (let i = 15 * (page - 1), count = 0; count < 15; i++, count++) {
+                html += '<tr>';
+                let item = list[i];
+                if (item == null) {
+                    stockHeadKeys[index].forEach(function () {
+                        html += "<td></td>";
+                    });
+                    html += '</tr>';
+                    continue;
+                }
+
+                html += '<td>' + (i + 1) + '</td>';
+                stockParamKeys[index].forEach(function (value) {
+                    if (value === "symbol") {
+                        html += '<td><a target="_blank" href="https://xueqiu.com/S/' +
+                            item[value] + '">' + item[value] + '</a></td>';
+                    } else if (value === "followers") {
+                        html += "<td style='text-align:right;'>" + item[value] + "</td>";
+                    } else {
+                        html += '<td>' + item[value] + '</td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += "</table>";
+            document.getElementById('stock-chart').innerHTML = html;
+            document.getElementById('stock-page').innerHTML = stockPage + "/" + stockMaxPage;
+            document.getElementById('stock-size').innerHTML = "共" + stockTotalCount + "条数据";
+            document.getElementById('stock-update-time').innerHTML = updatedAt === "" ? "" : ("更新于" + updatedAt);
+        }
+
+        /**
+         * 请求接口数据
+         * @param type
+         * @param level
+         */
+        function fetchStockChartData(index, url) {
+            let ajax = new XMLHttpRequest();
+            ajax.open('get', url + '&order=' + stockOrder);
+            ajax.send();
+            ajax.onreadystatechange = function () {
+                if (ajax.readyState === 4 && ajax.status === 200) {
+                    let chart = ajax.responseText;
+                    chart = JSON.parse(chart);
+                    stockChartArr[index] = chart;
+                    fillStockChartData(index, url, 1);
+                }
+            }
+        }
+
     </script>
 </head>
 <body style="position:relative;z-index:10;">
@@ -737,6 +1036,34 @@
         <a id="next-page" class="table-footer" href="javascript:void(0);">下一页</a>
         <div class="table-footer" id="page">1/1</div>
         <a id='last-page' class="table-footer" href="javascript:void(0);">上一页</a>
+
+    </div>
+
+</div>
+
+<div class="card">
+    <div class="flex" style="height: 48px;">
+        <a class="duration" href="javascript:void(0);">个股信息
+            <div class="bottom-line"></div>
+        </a>
+    </div>
+    <div class="hr"></div>
+    <div class="flex">
+        <div class="btn-group">
+            <a id="now" class="stock btn  active" href="#fakelink">当前信息</span></a>
+            <a id="lasthour" class="stock btn" href="#fakelink">近一小时</a>
+            <a id="lastday" class="stock btn" href="#fakelink">近一天</a>
+            <a id="lastweek" class="stock btn" href="#fakelink">近一周</a>
+        </div>
+        <div id="stock-update-time" style="flex: 1;text-align: right;"></div>
+    </div>
+
+    <div id="stock-chart" style="width: 100%;"></div>
+    <div class="flex" style="flex-direction:row-reverse;margin: 12px 0;">
+        <div class="table-footer" id="stock-size">共0条数据</div>
+        <a id="stock-next-page" class="table-footer" href="javascript:void(0);">下一页</a>
+        <div class="table-footer" id="stock-page">1/1</div>
+        <a id='stock-last-page' class="table-footer" href="javascript:void(0);">上一页</a>
 
     </div>
 
