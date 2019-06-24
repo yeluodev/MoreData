@@ -108,22 +108,13 @@ public class AsyncApi extends ApiManager {
     /**
      * 股票列表
      *
-     * @param page 页数
+     * @param page     页数
      * @param callback 回调
      */
     public void fetchStockList(int page, BaseApiCallback callback) {
         String params = "?market=CN&order=desc&order_by=percent&size=60&type=sh_sz&page=" + page;
         Request req = buildRequest(STOCK_LIST + params, null, null);
         client.newCall(req).enqueue(callback);
-    }
-
-    public static void main(String[] args) {
-        getInstance().searchSymbolStatuses("SH600036", new BaseApiCallback() {
-            @Override
-            public void onSuccess(String response) {
-
-            }
-        });
     }
 
 }

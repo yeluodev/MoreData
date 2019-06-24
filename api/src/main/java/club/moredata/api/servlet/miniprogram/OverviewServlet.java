@@ -101,7 +101,7 @@ public class OverviewServlet extends BaseServlet {
 
         LeekResult<AlsCube> daysLeekResult = analysisTask.cubeRankList(3, 4);
         Section<ItemEntity> daysSection = new Section<>();
-        daysSection.setId(4);
+        daysSection.setId(6);
         daysSection.setTitle("组合榜");
         daysSection.setSubtitle("在榜天数");
         daysSection.setColor("#e14594");

@@ -4,6 +4,7 @@ import club.moredata.api.model.LeekResponse;
 import club.moredata.api.task.StockTask;
 import club.moredata.common.model.History;
 import club.moredata.common.model.Stock;
+import club.moredata.common.net.SyncApi;
 import com.alibaba.fastjson.JSON;
 
 import javax.servlet.ServletException;
@@ -51,6 +52,7 @@ public class StockServlet extends BaseServlet {
         String page = request.getParameter("page");
         String order = request.getParameter("order");
         String all = request.getParameter("all");
+        String symbols = request.getParameter("symbols");
         if (page == null) {
             page = "1";
         }
@@ -109,6 +111,11 @@ public class StockServlet extends BaseServlet {
                 } else {
                     printChange(out, weekHistory, pageInt, orderInt, allInOnePage);
                 }
+                break;
+            case "trade":
+                List<Stock> stockList = SyncApi.getInstance().fetchStockTradeInfos(symbols);
+                leekResponse = LeekResponse.successResponse(stockList);
+                out.print(JSON.toJSONString(leekResponse));
                 break;
             default:
                 leekResponse = LeekResponse.errorURLResponse();
