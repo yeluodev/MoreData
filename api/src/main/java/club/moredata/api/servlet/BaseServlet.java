@@ -23,8 +23,8 @@ public abstract class BaseServlet extends HttpServlet {
     Pattern rebalancingPattern = Pattern.compile("[1-3]");
 //    Pattern cubeIdsPattern = Pattern.compile("^(((ZH)?\\d*[,])*(ZH)?\\d*)$");
     //输入框不再限制组合id和symbol，任意字符串搜索
-    Pattern cubeIdsPattern = Pattern.compile("\\S*");
-    Pattern symbolPattern = Pattern.compile("^(ZH\\d{5,7})$");
+    protected Pattern cubeIdsPattern = Pattern.compile("\\S*");
+    protected Pattern symbolPattern = Pattern.compile("^(ZH\\d{5,7})$");
     Pattern cashPattern = Pattern.compile("[01]");
     Pattern pagePattern = Pattern.compile("[1-9]\\d*");
 

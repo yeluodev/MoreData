@@ -10,6 +10,7 @@ import java.util.Set;
 
 /**
  * Redis数据库操作类
+ *
  * @author yeluodev1226
  */
 public class RedisTask {
@@ -21,9 +22,10 @@ public class RedisTask {
 
     /**
      * 插入待更新组合队列
+     *
      * @param cubeList 列表
      */
-    public static void insertCubeToPending(List<Cube> cubeList){
+    public static void insertCubeToPending(List<Cube> cubeList) {
         Jedis jedis = RedisUtil.getJedis();
         jedis.select(4);
         cubeList.forEach(cube -> jedis.zadd(KEY_CUBE_PENDING, cube.getFollowerCount(), cube.getSymbol()));
@@ -34,7 +36,7 @@ public class RedisTask {
     /**
      * 重置待更新组合队列
      */
-    public static void resetPendingCube(){
+    public static void resetPendingCube() {
         Jedis jedis = RedisUtil.getJedis();
         jedis.select(4);
         jedis.del(KEY_CUBE_PENDING);
@@ -44,9 +46,10 @@ public class RedisTask {
 
     /**
      * 查找更新时间距现在最长的10个组合
+     *
      * @return 组合代码列表
      */
-    public static List<String> oldestCubeToUpdate(){
+    public static List<String> oldestCubeToUpdate() {
         Jedis redis = RedisUtil.getJedis();
         redis.select(4);
         Set<String> set = redis.zrevrangeByScore(KEY_CUBE_PENDING, "+inf", "-inf", 0, 10);
@@ -58,18 +61,20 @@ public class RedisTask {
 
     /**
      * 组合更新成功
+     *
      * @param symbol 组合代码
      */
-    public static void moveCubeFromFetchingToSuccess(String symbol){
-        moveRedisMember(KEY_CUBE_FETCHING,KEY_CUBE_SUCCESS,symbol);
+    public static void moveCubeFromPendingToSuccess(String symbol) {
+        moveRedisMember(KEY_CUBE_PENDING, KEY_CUBE_SUCCESS, symbol);
     }
 
     /**
      * 组合更新失败
+     *
      * @param symbol 组合代码
      */
-    public static void moveCubeFromFetchingToFail(String symbol){
-        moveRedisMember(KEY_CUBE_FETCHING,KEY_CUBE_FAIL,symbol);
+    public static void moveCubeFromPendingToFail(String symbol) {
+        moveRedisMember(KEY_CUBE_PENDING, KEY_CUBE_FAIL, symbol);
     }
 
     /**
@@ -82,7 +87,8 @@ public class RedisTask {
     private static void moveRedisMember(String source, String des, String member) {
         Jedis redis = RedisUtil.getJedis();
         redis.select(4);
-        redis.smove(source, des, member);
+        redis.zrem(source, member);
+        redis.zadd(des, 0, member);
         redis.select(0);
         redis.close();
     }

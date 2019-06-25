@@ -204,14 +204,14 @@ public class CubeTask {
                         Gson gson = new Gson();
                         Cube cube = gson.fromJson(response, Cube.class);
                         syncCubeData(cube, false);
-                        RedisTask.moveCubeFromFetchingToSuccess(symbol);
+                        RedisTask.moveCubeFromPendingToSuccess(symbol);
                         emitter.onNext(true);
                         emitter.onComplete();
                     }
 
                     @Override
                     public void onError(String response) {
-                        RedisTask.moveCubeFromFetchingToFail(symbol);
+                        RedisTask.moveCubeFromPendingToFail(symbol);
                         Gson gson = new Gson();
                         ErrorResponse errorResponse = gson.fromJson(response,ErrorResponse.class);
                         if(errorResponse.getErrorDescription().equals("该组合不存在")){
@@ -260,14 +260,14 @@ public class CubeTask {
                 Cube cube = gson.fromJson(response, Cube.class);
                 syncCubeData(cube, false);
                 if (inDB) {
-                    RedisTask.moveCubeFromFetchingToSuccess(symbol);
+                    RedisTask.moveCubeFromPendingToSuccess(symbol);
                 }
             }
 
             @Override
             public void onError(String response) {
                 if (inDB) {
-                    RedisTask.moveCubeFromFetchingToFail(symbol);
+                    RedisTask.moveCubeFromPendingToFail(symbol);
                 }
             }
         });

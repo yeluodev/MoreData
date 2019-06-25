@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class SearchResult<T> implements Serializable {
 
+    private static final long serialVersionUID = 8681729900990787957L;
     private int count;
     private String q;
     private int page;
