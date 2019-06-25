@@ -268,6 +268,7 @@
         let chartsArr = [];
         let type = 1;
         let page = 1;
+        let order = 1;
         let maxPage = 1;
         let totalCount = 0;
         let trackCubeData = null;
@@ -283,7 +284,28 @@
         let selectors = ['a.segment', 'a.dimension'];
 
         $(function () {
-            $('body').addClass('bactive');
+            $('body').addClass('bactive').on('click', '.btn-count', function () {
+                if (order === 3 || order === 4) {
+                    order = 7 - order;
+                } else {
+                    order = 3;
+                }
+                refetchTableData();
+            }).on('click', '.btn-percent', function () {
+                if (order === 1 || order === 2) {
+                    order = 3 - order;
+                } else {
+                    order = 1;
+                }
+                refetchTableData();
+            }).on('click', '.btn-rebalancing', function () {
+                if (order === 5 || order === 6) {
+                    order = 11 - order;
+                } else {
+                    order = 5;
+                }
+                refetchTableData();
+            });
 
             let iframe = document.getElementById('iframe');
             iframe.onload = function () {
@@ -355,12 +377,15 @@
                     switch (value) {
                         case '#stock':
                             type = 1;
+                            order = 1;
                             break;
                         case '#segment':
                             type = 2;
+                            order = 1;
                             break;
                         case '#rebalancing':
                             type = 3;
+                            order = 5;
                             break;
                     }
                     page = 1;
@@ -406,6 +431,12 @@
                 modal.find('#track-cube-content')[0].innerHTML = html;
             });
 
+            function refetchTableData() {
+                chartsArr[type] = [];
+                page = 1;
+                fillTableData(type, cubeIds, page, true);
+            }
+
             /**
              * 填充表格数据
              * @param type
@@ -424,8 +455,28 @@
                 let html = "<table><tr>";
 
                 headKeys[type].forEach(function (value) {
-                    if (value === '比重/%' || value === '满仓比重/%' || value === '调仓比重/%') {
-                        html += '<th style="text-align:right;">' + value + '</th>';
+                    let iconSpan;
+                    if (order % 2 === 1) {
+                        iconSpan = '<span class="fui-triangle-down-small"></span>';
+                    } else if (order % 2 === 0) {
+                        iconSpan = '<span class="fui-triangle-up-small"></span>';
+                    }
+
+                    if (value === "持有组合数") {
+                        html +=
+                            '<th class="btn-count"><a href="javascript:void(0);">' + value + ((order === 3 || order === 4)
+                            ? iconSpan : '') + '</a></th>';
+                    } else if (value === "比重/%" || value === "满仓比重/%") {
+                        html += '<th class="btn-percent" style="text-align: right"><a href="javascript:void(0);">' + value + ((order
+                            === 1
+                            || order
+                            === 2)
+                            ? iconSpan : '') + '</a></th>';
+                    } else if (value === "调仓比重/%") {
+                        html += '<th class="btn-rebalancing" style="text-align: right"><a href="javascript:void(0);">' + value + ((order === 5 ||
+                            order
+                            === 6)
+                            ? iconSpan : '') + '</a></th>';
                     } else {
                         html += '<th>' + value + '</th>';
                     }
@@ -488,7 +539,7 @@
              */
             function fetchAnalysisResult(type, cubeIds) {
                 $.ajax({
-                    url: 'https://www.moredata.club/analysis?type=' + type + '&cubeIds=' + cubeIds,
+                    url: 'https://www.moredata.club/analysis?type=' + type + '&cubeIds=' + cubeIds + '&order=' + order,
                     success: function (data) {
                         chartsArr[type] = data;
                         fillTableData(type, cubeIds, 1, false);
