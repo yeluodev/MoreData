@@ -124,8 +124,9 @@ public class CubeTask {
      * @param cube 组合数据
      * @param inDb 是否已入库
      */
-    private void syncCubeData(Cube cube, boolean inDb) {
+    private boolean syncCubeData(Cube cube, boolean inDb) {
         Connection connection = null;
+        boolean syncSuccess = false;
         try {
             connection = DBPoolConnection.getInstance().getConnection();
             //关闭外键约束
@@ -151,6 +152,7 @@ public class CubeTask {
             //关闭外键约束
             connection.prepareStatement(SQLBuilder.buildForeignKeyCheck(true)).execute();
             connection.commit();
+            syncSuccess = true;
         } catch (SQLException e) {
             e.printStackTrace();
             try {
@@ -160,6 +162,7 @@ public class CubeTask {
             } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
+            syncSuccess = false;
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } finally {
@@ -171,6 +174,7 @@ public class CubeTask {
                 e.printStackTrace();
             }
         }
+        return syncSuccess;
 
     }
 
@@ -203,9 +207,13 @@ public class CubeTask {
                     public void onSuccess(String response) {
                         Gson gson = new Gson();
                         Cube cube = gson.fromJson(response, Cube.class);
-                        syncCubeData(cube, false);
-                        RedisTask.moveCubeFromPendingToSuccess(symbol);
-                        emitter.onNext(true);
+                        if (syncCubeData(cube, false)) {
+                            RedisTask.moveCubeFromPendingToSuccess(symbol);
+                            emitter.onNext(true);
+                        } else {
+                            RedisTask.moveCubeFromPendingToFail(symbol);
+                            emitter.onError(new ApiException("数据库操作异常"));
+                        }
                         emitter.onComplete();
                     }
 
@@ -213,11 +221,11 @@ public class CubeTask {
                     public void onError(String response) {
                         RedisTask.moveCubeFromPendingToFail(symbol);
                         Gson gson = new Gson();
-                        ErrorResponse errorResponse = gson.fromJson(response,ErrorResponse.class);
-                        if(errorResponse.getErrorDescription().equals("该组合不存在")){
+                        ErrorResponse errorResponse = gson.fromJson(response, ErrorResponse.class);
+                        if (errorResponse.getErrorDescription().equals("该组合不存在")) {
                             CubeDbHelper.getInstance().updateCubeRemoved(symbol);
                         }
-                        emitter.onNext(false);
+                        emitter.onError(new ApiException("数据库操作异常"));
                         emitter.onComplete();
                     }
                 }))));
@@ -258,9 +266,13 @@ public class CubeTask {
             public void onSuccess(String response) {
                 Gson gson = new Gson();
                 Cube cube = gson.fromJson(response, Cube.class);
-                syncCubeData(cube, false);
+                boolean syncSuccess = syncCubeData(cube, false);
                 if (inDB) {
-                    RedisTask.moveCubeFromPendingToSuccess(symbol);
+                    if(syncSuccess){
+                        RedisTask.moveCubeFromPendingToSuccess(symbol);
+                    }else {
+                        RedisTask.moveCubeFromPendingToFail(symbol);
+                    }
                 }
             }
 
