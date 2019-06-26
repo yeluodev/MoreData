@@ -268,9 +268,9 @@ public class CubeTask {
                 Cube cube = gson.fromJson(response, Cube.class);
                 boolean syncSuccess = syncCubeData(cube, false);
                 if (inDB) {
-                    if(syncSuccess){
+                    if (syncSuccess) {
                         RedisTask.moveCubeFromPendingToSuccess(symbol);
-                    }else {
+                    } else {
                         RedisTask.moveCubeFromPendingToFail(symbol);
                     }
                 }
@@ -283,6 +283,44 @@ public class CubeTask {
                 }
             }
         });
+    }
+
+    /**
+     * 更新组合详情
+     *
+     * @param symbol 组合代码
+     * @return 执行结果
+     */
+    public boolean syncUpdateCubeDetail(String symbol) {
+        return syncUpdateCubeDetail(symbol, false);
+    }
+
+    /**
+     * 更新组合详情
+     *
+     * @param symbol 组合代码
+     * @param inDB   是否已入库
+     * @return 执行结果
+     */
+    public boolean syncUpdateCubeDetail(String symbol, boolean inDB) {
+        String response = SyncApi.getInstance().fetchCubeDetail(symbol);
+        if (response == null) {
+            if (inDB) {
+                RedisTask.moveCubeFromPendingToFail(symbol);
+            }
+            return false;
+        }
+        Gson gson = new Gson();
+        Cube cube = gson.fromJson(response, Cube.class);
+        boolean syncSuccess = syncCubeData(cube, false);
+        if (inDB) {
+            if (syncSuccess) {
+                RedisTask.moveCubeFromPendingToSuccess(symbol);
+            } else {
+                RedisTask.moveCubeFromPendingToFail(symbol);
+            }
+        }
+        return syncSuccess;
     }
 
     /**

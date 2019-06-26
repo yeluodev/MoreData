@@ -83,7 +83,7 @@ public class CubeServlet extends BaseServlet {
         if (key == null) {
             key = "";
         }
-        if(symbol==null){
+        if (symbol == null) {
             symbol = "";
         }
 
@@ -167,9 +167,12 @@ public class CubeServlet extends BaseServlet {
                     out.print(JSON.toJSONString(leekResponse));
                     return;
                 }
-                //TODO 更新入库组合应当等待执行结果返回，不然app端插入后，立即分析结果，会由于数据还未插入数据库，导致无结果
-                cubeTask.updateCubeDetail(symbol);
-                leekResponse = LeekResponse.successResponse(null,"已加入更新队列，稍后再试");
+                boolean insertSuccess = cubeTask.syncUpdateCubeDetail(symbol);
+                if (insertSuccess) {
+                    leekResponse = LeekResponse.successResponse(null, "组合已入库");
+                } else {
+                    leekResponse = LeekResponse.successResponse(null, "组合入库失败");
+                }
                 break;
 
             //返回用户输入的组合列表，分为已入库列表和未入库的搜索结果列表

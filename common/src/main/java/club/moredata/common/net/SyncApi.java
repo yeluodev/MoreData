@@ -162,4 +162,30 @@ public class SyncApi extends ApiManager {
         return null;
     }
 
+    /**
+     * 雪球组合详情
+     *
+     * @param symbol   股票代码
+     * @return 结果
+     */
+    public String fetchCubeDetail(String symbol) {
+        String params = "?mix_rebalancing=true&ret_last_buy_rb_gid=true&symbol=" + symbol;
+        Request req = buildRequest(CUBES_DETAIL + params, null, null);
+        try {
+            Response response = call(req);
+            if (response == null) {
+                return null;
+            }
+            String res = response.body().string();
+            System.out.println(res);
+            if (response.code() >= 200 && response.code() < 300) {
+                return res;
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 }

@@ -95,33 +95,6 @@ public class ApiManager {
         return null;
     }
 
-//    /**
-//     * 获取组合详情
-//     *
-//     * @param symbol
-//     * @param callback
-//     */
-//    public void fetchCubeDetail(String symbol, BaseApiCallback callback) {
-//        String params = "?mix_rebalancing=true&ret_last_buy_rb_gid=true&symbol=" + symbol;
-//        Request request = new Request.Builder()
-//                .url(CUBES_DETAIL + params)
-//                .build();
-//        client.newCall(request).enqueue(callback);
-//    }
-
-    public Response fetchCubeDetail(String symbol) {
-        String params = "?mix_rebalancing=true&ret_last_buy_rb_gid=true&symbol=" + symbol;
-        Request request = new Request.Builder()
-                .url(CUBES_DETAIL + params)
-                .build();
-        try {
-            return client.newCall(request).execute();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public void fetchRebalancingHistory(int cubeId, BaseApiCallback callback) {
         String params = "?count=20&page=1&cube_id=" + cubeId;
         Request request = new Request.Builder()
