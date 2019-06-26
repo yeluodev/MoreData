@@ -167,6 +167,7 @@ public class CubeServlet extends BaseServlet {
                     out.print(JSON.toJSONString(leekResponse));
                     return;
                 }
+                //TODO 更新入库组合应当等待执行结果返回，不然app端插入后，立即分析结果，会由于数据还未插入数据库，导致无结果
                 cubeTask.updateCubeDetail(symbol);
                 leekResponse = LeekResponse.successResponse(null,"已加入更新队列，稍后再试");
                 break;

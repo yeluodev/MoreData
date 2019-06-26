@@ -32,6 +32,9 @@ public enum OrderType {
     }
 
     public static OrderType getType(String value) {
+        if (value == null) {
+            return WEIGHT_DESC;
+        }
         OrderType type;
         switch (value) {
             case "2":
