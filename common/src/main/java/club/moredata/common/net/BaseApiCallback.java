@@ -1,8 +1,10 @@
 package club.moredata.common.net;
 
+import club.moredata.common.util.RedisUtil;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -31,8 +33,23 @@ public abstract class BaseApiCallback implements Callback {
             onSuccess(str);
         } else {
             System.out.println(String.format("接口请求发生%d错误", response.code()));
+            removeCookieToErrorList(response.request().header("Cookie"));
             onError(str);
         }
+    }
+
+    /**
+     * 将出错cookie从Valid-Cookie转移到Error-Cookie
+     *
+     * @param cookie
+     */
+    private void removeCookieToErrorList(String cookie) {
+        Jedis jedis = RedisUtil.getJedis();
+        jedis.select(1);
+        jedis.lrem("Valid-Cookie", 1, cookie);
+        jedis.lpush("Error-Cookie", cookie);
+        jedis.select(0);
+        jedis.close();
     }
 
     /**

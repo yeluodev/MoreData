@@ -13,4 +13,6 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    implementation 'com.baidu.aip:java-sdk:4.11.3'
 }
