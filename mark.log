@@ -1,2 +1,5 @@
 1、上传代码后，域名访问未及时生效？
     重启tomcat服务器
+2、windows查找进程，杀死进程
+    netstat ano|findstr xxxx
+    taskkill /F /PID xxxx

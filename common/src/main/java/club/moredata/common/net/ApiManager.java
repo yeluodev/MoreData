@@ -135,7 +135,7 @@ public class ApiManager {
         //自动调仓账号是固定的，因此只能是QQ登录的账号Cookie
         Request request = new Request.Builder()
                 .url(CUBES_REBALANCING_CREATE)
-                .header("Cookie", "xq_a_token=6a8cac4e9ea074035410b8ecea901a9053e2eaa6;u=9084578148")
+                .header("Cookie", "xq_a_token=e9a16fd39f8a7a53c4bad40a23c6d7bc0d4f4c53;u=9084578148")
                 .post(body)
                 .build();
         try {

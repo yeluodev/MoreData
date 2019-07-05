@@ -16,6 +16,18 @@ import java.io.IOException;
  */
 public class CommonHeadersInterceptor implements Interceptor {
 
+    private static String[] cookieArr = new String[]{
+            //chrome游客
+//            "xq_a_token=fb5669a9402562082fea0085812a685be3947b19;u=251560908693357",
+            //QQ登录
+            "xq_a_token=e9a16fd39f8a7a53c4bad40a23c6d7bc0d4f4c53;u=9084578148",
+            //iPhone游客登录
+            "xq_a_token=df8524b38974fce13d20b7ee39af90871c03be91;u=5414038194",
+            //手机号登录 失效
+            "xq_a_token=0a7ac01c8257d47ff5404264fad05adf14feb1d0;u=4880351754",
+            //微信登录
+            "xq_a_token=8e00da4adb7e8067c2bfd19344954ceb1ec306ee;u=2341915540"};
+
     private static String HOST_XUEQIU_API = "api.xueqiu.com";
     private static String HOST_XUEQIU_STOCK = "stock.xueqiu.com";
 
@@ -33,13 +45,8 @@ public class CommonHeadersInterceptor implements Interceptor {
         }
         headersBuilder.add("Accept", "application/json");
 
-        Jedis jedis = RedisUtil.getJedis();
-        jedis.select(1);
-        int length = Math.toIntExact(jedis.llen("Valid-Cookie"));
-        int index = Math.min((int) Math.round(Math.random() * length), (length - 1));
-        String cookie = jedis.lindex("Valid-Cookie", index);
-        jedis.select(0);
-        jedis.close();
+        int index = Math.min((int) Math.round(Math.random() * 4), 3);
+        String cookie = cookieArr[index];
 
         headersBuilder.add("Cookie", cookie);
         headersBuilder.add("User-Agent", "Xueqiu iPhone 11.19.1");

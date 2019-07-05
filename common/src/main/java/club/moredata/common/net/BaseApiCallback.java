@@ -33,7 +33,7 @@ public abstract class BaseApiCallback implements Callback {
             onSuccess(str);
         } else {
             System.out.println(String.format("接口请求发生%d错误", response.code()));
-            removeCookieToErrorList(response.request().header("Cookie"));
+//            removeCookieToErrorList(response.request().header("Cookie"));
             onError(str);
         }
     }

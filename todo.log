@@ -49,44 +49,13 @@
     1.0.4
         股票交易数据
         筛选股票
+        雪球用户排行接口优化
+            因为结果长时间内不会发生变化，将处理结果缓存下来，接口返回该数据就行，不用每次请求都去查整个用户表
+            750W数据查起来费劲
 
 
 
 
-每小时变化
-每日变化
-每周变化
-每月变化
-
-请求数
-24*4500=108000
-*2     =216000
-
-
-记录数
-24*4500=108000
-*2     =216000
-*30    =6480000/月
-
-redis存储
-
-失败请求地址 errorUrlList
-
-1000条请求地址 List<String> pendingUrlList 待请求list
-
-发请求，pendingUrlList取出url进行请求
-
-ip被限制，账号被限制，就要切ip和账号cookie，该条请求返回失败，errorUrlList.add(errorUrl)
-
-1000条跑完，去查errorUrlList,size=0,代表1000条请求已抓取完毕
-size>0,代表有地址是失败的，就等于说把errorUrlList赋给pendingUrlList，再重新跑一次流程
-
-
-redis
-    list PendingUrlList +1000条请求
-
-    发请求时，从pendingUrlList中pop出一条，进行请求
-    请求失败，就切换ip
 
 
 
@@ -123,5 +92,10 @@ redis
             同一组合对个股比重进行调整时，相同比重实际效果应该也是不一样的，上午先卖出20%下午再买入20%，净值大多数情况下是有所区别的
         ......
 
+
+
+
+TODO
+    更新cookie
 
 
