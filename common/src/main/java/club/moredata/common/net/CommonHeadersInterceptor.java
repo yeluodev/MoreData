@@ -22,11 +22,11 @@ public class CommonHeadersInterceptor implements Interceptor {
             //QQ登录
             "xq_a_token=e9a16fd39f8a7a53c4bad40a23c6d7bc0d4f4c53;u=9084578148",
             //iPhone游客登录
-            "xq_a_token=df8524b38974fce13d20b7ee39af90871c03be91;u=5414038194",
+            "xq_a_token=7005ea96678d3fd7456d330dbf8aff4b64b7196a;u=5414038194",
             //手机号登录 失效
             "xq_a_token=0a7ac01c8257d47ff5404264fad05adf14feb1d0;u=4880351754",
             //微信登录
-            "xq_a_token=8e00da4adb7e8067c2bfd19344954ceb1ec306ee;u=2341915540"};
+            "xq_a_token=d53d8f949157bb0d16c8825e909508a4aca355b6;u=2341915540"};
 
     private static String HOST_XUEQIU_API = "api.xueqiu.com";
     private static String HOST_XUEQIU_STOCK = "stock.xueqiu.com";

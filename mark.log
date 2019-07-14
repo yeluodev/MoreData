@@ -3,3 +3,7 @@
 2、windows查找进程，杀死进程
     netstat ano|findstr xxxx
     taskkill /F /PID xxxx
+3、centos查看空间占用
+    df -h
+    du -sh *
+
